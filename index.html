@@ -172,7 +172,10 @@
                 <div id="communityPollsContainer" class="space-y-4 text-xs"></div>
             </div>
             <div id="managerPollsSection" class="manager-only bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-3 hidden">
-                <h3 class="font-bold text-amber-900 text-sm"><i class="fa-solid fa-screwdriver-wrench"></i> لوحة تحكم وإدارة الاستطلاعات (للمدير)</h3>
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-amber-900 text-sm"><i class="fa-solid fa-screwdriver-wrench"></i> لوحة تحكم وإدارة الاستطلاعات والتقارير</h3>
+                    <button onclick="printPollsReport()" class="bg-amber-700 text-white px-3 py-1 rounded-xl text-xs font-bold"><i class="fa-solid fa-print"></i> طباعة تقرير التصويت</button>
+                </div>
                 <div id="managerPollsList" class="space-y-3 text-xs"></div>
             </div>
         </div>
@@ -190,7 +193,24 @@
             </div>
         </div>
     </main>
-    <!-- Modals -->
+
+    <!-- Modal for Voting Form -->
+    <div id="voteModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-3 text-xs">
+            <h3 class="font-bold text-sm text-slate-800">تأكيد التصويت على القرار</h3>
+            <p id="voteModalQuestion" class="text-slate-600 font-medium"></p>
+            <input type="text" id="voteAptNumber" placeholder="رقم الشقة (مثل: 101)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="voteOwnerName" placeholder="اسم صاحب الشقة / الساكن" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="hidden" id="votePollId">
+            <input type="hidden" id="voteChoice">
+            <div class="flex gap-2 pt-2">
+                <button onclick="submitVote()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">تأكيد وإرسال الصوت</button>
+                <button onclick="closeModal('voteModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Modals -->
     <div id="addAptModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-3 text-xs">
             <h3 class="font-bold text-sm">إضافة شقة جديدة للبرج</h3>
@@ -296,7 +316,6 @@
             rtdb.ref('borj_elsohba_db').set(db);
         }
 
-        // دالة لحساب إجمالي المطلوب من الشقة (الاشتراك الشهري + إجمالي بنود الإيرادات الإضافية)
         function getTotalAptDue(apt) {
             let base = Number(apt.amount || 200);
             let extra = (db.extraRevenues || []).reduce((sum, er) => sum + Number(er.amountPerApt || 0), 0);
@@ -388,7 +407,7 @@
 
             document.getElementById('myApartmentTitle').innerText = apt.name;
             document.getElementById('myApartmentTenant').innerText = `المالك/الساكن: ${apt.tenant}`;
-            document.getElementById('myMonthlyDuesText').innerText = `الإجمالي المطلوب (اشتراك + إضافات): ${totalDue} جـ (المدفوع: ${paid} جـ)`;
+            document.getElementById('myMonthlyDuesText').innerText = `الإجمالي المطلوب: ${totalDue} جـ (المدفوع: ${paid} جـ)`;
                         
             const statusBadge = document.getElementById('myPaymentStatusBadge');
             if (payment.status === 'paid' || paid >= totalDue) {
@@ -410,7 +429,7 @@
                 const pAmt = Number(p ? p.paidAmount || 0 : 0);
                 totalIncome += pAmt;
                 const req = getTotalAptDue(a);
-                if (!p || p.status !== 'paid' && pAmt < req) lateCount++;
+                if (!p || (p.status !== 'paid' && pAmt < req)) lateCount++;
             });
 
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
@@ -419,15 +438,76 @@
             document.getElementById('statMonthCollected').innerText = `${totalIncome} جـ`;
             document.getElementById('statLateCount').innerText = `${lateCount} شقق`;
 
-            document.getElementById('homePollsContainer').innerHTML = (db.polls || []).map(p => `
-                <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
-                    <p class="font-bold text-slate-800">${p.question}</p>
-                    <div class="flex gap-2">
-                        <button onclick="votePoll(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 text-white py-1.5 rounded-lg font-bold">موافق</button>
-                        <button onclick="votePoll(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+            // رندر استطلاعات الرأي في الرئيسية مع عرض أعداد الموافقين والرافضين
+            document.getElementById('homePollsContainer').innerHTML = (db.polls || []).map(p => {
+                const approveCount = (p.options && p.options["موافق"]) ? p.options["موافق"].length : 0;
+                const rejectCount = (p.options && p.options["غير موافق"]) ? p.options["غير موافق"].length : 0;
+                return `
+                    <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
+                        <p class="font-bold text-slate-800">${p.question}</p>
+                        <div class="flex justify-between text-[11px] text-slate-500 font-bold px-1">
+                            <span class="text-emerald-700">موافق: ${approveCount}</span>
+                            <span class="text-rose-700">غير موافق: ${rejectCount}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openVoteModal(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg font-bold">موافق</button>
+                            <button onclick="openVoteModal(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        function openVoteModal(pollId, choice) {
+            const p = (db.polls || []).find(x => x.id === pollId);
+            if (!p) return;
+            document.getElementById('voteModalQuestion').innerText = p.question;
+            document.getElementById('votePollId').value = pollId;
+            document.getElementById('voteChoice').value = choice;
+            
+            // تعبئة افتراضية بالشقة الحالية المحددة للتسهيل
+            const apt = (db.apartments || []).find(a => a.id === currentResidentId);
+            if (apt) {
+                document.getElementById('voteAptNumber').value = apt.name.replace('شقة ', '');
+                document.getElementById('voteOwnerName').value = apt.tenant;
+            } else {
+                document.getElementById('voteAptNumber').value = '';
+                document.getElementById('voteOwnerName').value = '';
+            }
+
+            document.getElementById('voteModal').classList.remove('hidden');
+        }
+
+        function submitVote() {
+            const pollId = Number(document.getElementById('votePollId').value);
+            const choice = document.getElementById('voteChoice').value;
+            const aptNo = document.getElementById('voteAptNumber').value.trim();
+            const ownerName = document.getElementById('voteOwnerName').value.trim();
+
+            if (!aptNo || !ownerName) {
+                alert("يرجى إدخال رقم الشقة واسم صاحب الشقة.");
+                return;
+            }
+
+            const p = (db.polls || []).find(x => x.id === pollId);
+            if (p) {
+                if (!p.options) p.options = { "موافق": [], "غير موافق": [] };
+                
+                const voterIdentifier = `شقة ${aptNo} - ${ownerName}`;
+                
+                // إزالة أي صوت سابق لهذه الشقة في نفس الاستطلاع
+                Object.keys(p.options).forEach(opt => {
+                    p.options[opt] = p.options[opt].filter(v => !v.startsWith(`شقة ${aptNo} -`));
+                });
+
+                // إضافة الصوت الجديد
+                p.options[choice] = p.options[choice] || [];
+                p.options[choice].push(voterIdentifier);
+                
+                saveDB();
+                closeModal('voteModal');
+                alert(`تم تسجيل صوتك (${choice}) بنجاح للشقة ${aptNo}!`);
+            }
         }
 
         function renderApartments() {
@@ -467,7 +547,7 @@
                         <td class="p-2.5">${badge}</td>
                         <td class="p-2.5 text-center flex justify-center gap-1.5">
                             <button onclick="promptPartialPayment('${apt.id}', ${totalDue})" class="manager-only bg-emerald-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hidden">تسجيل دفع</button>
-                            <button onclick="deleteApartment('${apt.id}')" class="manager-only bg-rose-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hidden"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteApartment('${apt.id}')" class="manager-only bg-rose-600 text-white px-2 py-1 rounded text-[11px] font-bold hidden"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -594,15 +674,23 @@
         }
 
         function renderCommunity() {
-            document.getElementById('communityPollsContainer').innerHTML = (db.polls || []).map(p => `
-                <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
-                    <h4 class="font-bold">${p.question}</h4>
-                    <div class="flex gap-2">
-                        <button onclick="votePoll(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 text-white py-1.5 rounded-lg font-bold">موافق</button>
-                        <button onclick="votePoll(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+            document.getElementById('communityPollsContainer').innerHTML = (db.polls || []).map(p => {
+                const approveCount = (p.options && p.options["موافق"]) ? p.options["موافق"].length : 0;
+                const rejectCount = (p.options && p.options["غير موافق"]) ? p.options["غير موافق"].length : 0;
+                return `
+                    <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
+                        <h4 class="font-bold text-slate-800">${p.question}</h4>
+                        <div class="flex justify-between text-[11px] text-slate-500 font-bold px-1">
+                            <span class="text-emerald-700">موافق: ${approveCount}</span>
+                            <span class="text-rose-700">غير موافق: ${rejectCount}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openVoteModal(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg font-bold">موافق</button>
+                            <button onclick="openVoteModal(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             document.getElementById('managerPollsList').innerHTML = (db.polls || []).map(p => {
                 let votersApprove = (p.options && p.options["موافق"]) ? p.options["موافق"].join(', ') : 'لا يوجد';
@@ -630,21 +718,8 @@
             `).join('');
         }
 
-        function votePoll(pollId, choice) {
-            const apt = (db.apartments || []).find(a => a.id === currentResidentId);
-            const residentNameStr = apt ? `${apt.name} - ${apt.tenant}` : `شقة ${currentResidentId}`;
-            const p = (db.polls || []).find(x => x.id === pollId);
-            
-            if (p) {
-                if (!p.options) p.options = { "موافق": [], "غير موافق": [] };
-                Object.keys(p.options).forEach(opt => {
-                    p.options[opt] = p.options[opt].filter(v => !v.startsWith(residentNameStr.split(' - ')[0]));
-                });
-                p.options[choice] = p.options[choice] || [];
-                p.options[choice].push(residentNameStr);
-                saveDB();
-                alert(`تم تسجيل صوتك (${choice}) بنجاح!`);
-            }
+        function printPollsReport() {
+            window.print();
         }
 
         function updatePoll(pollId) {
@@ -736,7 +811,7 @@
 
         function saveNewExpense() {
             const title = document.getElementById('expTitle').value;
-            const amount = document.getElementById('expAmount.value');
+            const amount = document.getElementById('expAmount').value;
             if (title && amount) {
                 if (!db.expenses) db.expenses = [];
                 db.expenses.push({ id: Date.now(), title: title, amount: amount, date: new Date().toISOString().split('T')[0] });
