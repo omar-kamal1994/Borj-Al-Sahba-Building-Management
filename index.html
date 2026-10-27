@@ -58,7 +58,7 @@
                     <div id="myPaymentStatusBadge" class="bg-amber-400 text-emerald-950 px-3 py-1 rounded-full text-xs font-bold shadow">جاري التحميل...</div>
                 </div>
                 <div class="mt-4 pt-3 border-t border-white/15 flex justify-between items-center text-xs">
-                    <span>اشتراك الشهر الحالي: 200 جـ</span>
+                    <span id="myMonthlyDuesText">اشتراك الشهر الحالي: 200 جـ</span>
                     <button onclick="notifyPaymentSent()" class="bg-white text-emerald-800 px-3 py-1.5 rounded-xl font-bold shadow hover:bg-emerald-50 transition">إشعار سداد الاشتراك</button>
                 </div>
             </div>
@@ -94,7 +94,7 @@
                             <tr>
                                 <th class="p-2.5">الشقة</th>
                                 <th class="p-2.5">المالك / الساكن</th>
-                                <th class="p-2.5">المبلغ</th>
+                                <th class="p-2.5">المبلغ المطلوب</th>
                                 <th class="p-2.5">الحالة</th>
                                 <th class="p-2.5 text-center">الإجراءات</th>
                             </tr>
@@ -136,9 +136,14 @@
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-square-poll-horizontal text-emerald-600"></i> استطلاعات الرأي والقرارات</h3>
-                    <button onclick="openNewPollModal()" class="manager-only bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hidden">استطلاع جديد</button>
+                    <button onclick="openNewPollModal()" class="manager-only bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hidden">+ استطلاع جديد</button>
                 </div>
                 <div id="communityPollsContainer" class="space-y-4 text-xs"></div>
+            </div>
+            <!-- MANAGER POLLS MANAGEMENT SECTION -->
+            <div id="managerPollsSection" class="manager-only bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-3 hidden">
+                <h3 class="font-bold text-amber-900 text-sm"><i class="fa-solid fa-screwdriver-wrench"></i> لوحة تحكم وإدارة الاستطلاعات (للمدير)</h3>
+                <div id="managerPollsList" class="space-y-3 text-xs"></div>
             </div>
         </div>
         <!-- EMERGENCY -->
@@ -161,6 +166,7 @@
             <h3 class="font-bold text-sm">إضافة شقة جديدة للبرج</h3>
             <input type="text" id="newAptNumber" placeholder="رقم الشقة (مثال: 104)" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <input type="text" id="newAptTenant" placeholder="اسم المالك أو الساكن" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="number" id="newAptAmount" placeholder="مبلغ الاشتراك الشهري (افتراضي: 200)" value="200" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-2">
                 <button onclick="saveNewApartment()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">حفظ الشقة</button>
                 <button onclick="closeModal('addAptModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
@@ -190,7 +196,7 @@
     </div>
 
     <script>
-        // --- Firebase Configuration (مربوط بقاعدتك السحابية) ---
+        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyDEDOb6H0Ychi1-hVIh4pSyWNaezk07SM",
             authDomain: "borjalsahba.firebaseapp.com",
@@ -207,22 +213,22 @@
 
         const initialData = {
             apartments: [
-                { id: "101", name: "شقة 101", tenant: "أحمد محمد" },
-                { id: "102", name: "شقة 102", tenant: "محمود حسن" },
-                { id: "201", name: "شقة 201", tenant: "كريم عبد الله" }
+                { id: "101", name: "شقة 101", tenant: "أحمد محمد", amount: 200 },
+                { id: "102", name: "شقة 102", tenant: "محمود حسن", amount: 200 },
+                { id: "201", name: "شقة 201", tenant: "كريم عبد الله", amount: 200 }
             ],
             payments: {
                 "2026-10": {
-                    "101": { status: "paid", amount: 200, note: "نقداً" },
-                    "102": { status: "pending", amount: 200 },
-                    "201": { status: "pending", amount: 200 }
+                    "101": { status: "paid", note: "نقداً" },
+                    "102": { status: "pending" },
+                    "201": { status: "pending" }
                 }
             },
             expenses: [
                 { id: 1, title: "فاتورة كهرباء السلم", amount: 145, date: "2026-10-03" }
             ],
             polls: [
-                { id: 1, question: "هل ترغب في تركيب كاميرات مراقبة جديدة عالبوابة؟", options: { "موافق": ["101"], "غير موافق": [] } }
+                { id: 1, question: "هل ترغب في تركيب كاميرات مراقبة جديدة عالبوابة؟", options: { "موافق": ["شقة 101 - أحمد محمد"], "غير موافق": [] } }
             ],
             tickets: [
                 { id: 1, apt: "شقة 201", desc: "لمبة الدور الثاني محروقة", status: "جاري الإصلاح 🔧", date: "2026-10-06" }
@@ -233,7 +239,6 @@
         let currentResidentId = "101";
         let isManagerMode = false;
 
-        // --- Real-time Sync with Firebase ---
         rtdb.ref('borj_elsohba_db').on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
@@ -327,10 +332,12 @@
             const currentMonth = "2026-10";
             if (!db.payments) db.payments = {};
             if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-            const payment = db.payments[currentMonth][apt.id] || { status: 'pending', amount: 200 };
+            const payment = db.payments[currentMonth][apt.id] || { status: 'pending' };
+            const aptAmount = apt.amount || 200;
 
             document.getElementById('myApartmentTitle').innerText = apt.name;
             document.getElementById('myApartmentTenant').innerText = `المالك/الساكن: ${apt.tenant}`;
+            document.getElementById('myMonthlyDuesText').innerText = `اشتراك الشهر الحالي: ${aptAmount} جـ`;
                         
             const statusBadge = document.getElementById('myPaymentStatusBadge');
             if (payment.status === 'paid') {
@@ -346,7 +353,7 @@
             const monthPayments = db.payments[currentMonth] || {};
             db.apartments.forEach(a => {
                 const p = monthPayments[a.id];
-                if (p && p.status === 'paid') totalIncome += Number(p.amount);
+                if (p && p.status === 'paid') totalIncome += Number(a.amount || 200);
                 else lateCount++;
             });
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
@@ -355,15 +362,17 @@
             document.getElementById('statMonthCollected').innerText = `${totalIncome} جـ`;
             document.getElementById('statLateCount').innerText = `${lateCount} شقق`;
 
-            document.getElementById('homePollsContainer').innerHTML = (db.polls || []).map(p => `
-                <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
-                    <p class="font-bold text-slate-800">${p.question}</p>
-                    <div class="flex gap-2">
-                        <button onclick="votePoll(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 text-white py-1.5 rounded-lg font-bold">موافق</button>
-                        <button onclick="votePoll(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+            document.getElementById('homePollsContainer').innerHTML = (db.polls || []).map(p => {
+                return `
+                    <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
+                        <p class="font-bold text-slate-800">${p.question}</p>
+                        <div class="flex gap-2">
+                            <button onclick="votePoll(${p.id}, 'موافق')" class="flex-1 bg-emerald-600 text-white py-1.5 rounded-lg font-bold">موافق</button>
+                            <button onclick="votePoll(${p.id}, 'غير موافق')" class="flex-1 bg-rose-600 text-white py-1.5 rounded-lg font-bold">غير موافق</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function renderApartments() {
@@ -374,19 +383,23 @@
             const tbody = document.getElementById('apartmentsTableBody');
 
             if (!db.apartments || db.apartments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">لا توجد شقق مسجلة حالياً. اضغط "إضافة شقة جديدة" بالأعلى.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">لا توجد شقق مسجلة حالياً.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = db.apartments.map(apt => {
-                const p = monthPayments[apt.id] || { status: 'pending', amount: 200 };
+                const p = monthPayments[apt.id] || { status: 'pending' };
                 let badge = `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold">غير مسدد</span>`;
                 if (p.status === 'paid') badge = `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">مسدد</span>`;
+                const aptAmount = apt.amount || 200;
                 return `
                     <tr class="hover:bg-slate-50 border-b">
                         <td class="p-2.5 font-bold">${apt.name}</td>
                         <td class="p-2.5">${apt.tenant}</td>
-                        <td class="p-2.5 font-bold">${p.amount || 200} جـ</td>
+                        <td class="p-2.5 font-bold">
+                            <span class="manager-only hidden"><input type="number" value="${aptAmount}" onchange="updateAptAmount('${apt.id}', this.value)" class="w-16 bg-slate-100 border rounded px-1 py-0.5 text-center font-bold"></span>
+                            <span class="resident-only">${aptAmount} جـ</span>
+                        </td>
                         <td class="p-2.5">${badge}</td>
                         <td class="p-2.5 text-center flex justify-center gap-1.5">
                             <button onclick="togglePayment('${apt.id}')" class="manager-only bg-emerald-600 text-white px-2 py-1 rounded text-[11px] font-bold hidden">حالة السداد</button>
@@ -398,10 +411,18 @@
             updateManagerUI();
         }
 
+        function updateAptAmount(aptId, newAmount) {
+            const apt = db.apartments.find(a => a.id === aptId);
+            if (apt) {
+                apt.amount = Number(newAmount) || 200;
+                saveDB();
+            }
+        }
+
         function togglePayment(aptId) {
             const currentMonth = "2026-10";
             if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-            const p = db.payments[currentMonth][aptId] || { status: 'pending', amount: 200 };
+            const p = db.payments[currentMonth][aptId] || { status: 'pending' };
             p.status = p.status === 'paid' ? 'pending' : 'paid';
             p.note = p.status === 'paid' ? 'تم السداد' : '';
             db.payments[currentMonth][aptId] = p;
@@ -409,7 +430,7 @@
         }
 
         function deleteApartment(aptId) {
-            if (confirm("هل أنت متأكد من حذف هذه الشقة نهائياً من سجلات البرج؟")) {
+            if (confirm("هل أنت متأكد من حذف هذه الشقة نهائياً؟")) {
                 db.apartments = db.apartments.filter(a => a.id !== aptId);
                 saveDB();
             }
@@ -418,9 +439,9 @@
         function notifyPaymentSent() {
             const currentMonth = "2026-10";
             if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-            db.payments[currentMonth][currentResidentId] = { status: 'paid', amount: 200, note: 'تم السداد' };
+            db.payments[currentMonth][currentResidentId] = { status: 'paid', note: 'تم السداد' };
             saveDB();
-            alert("تم إرسال سداد الاشتراك وتحديث الحالة بنجاح!");
+            alert("تم إرسال إشعار السداد بنجاح!");
         }
 
         function renderFinance() {
@@ -429,7 +450,7 @@
             let totalIncome = 0;
             if (db.apartments) {
                 db.apartments.forEach(a => {
-                    if (monthPayments[a.id]?.status === 'paid') totalIncome += Number(monthPayments[a.id].amount || 200);
+                    if (monthPayments[a.id]?.status === 'paid') totalIncome += Number(a.amount || 200);
                 });
             }
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
@@ -459,6 +480,25 @@
                 </div>
             `).join('');
 
+            // Manager Polls Management Panel
+            document.getElementById('managerPollsList').innerHTML = (db.polls || []).map(p => {
+                let votersApprove = (p.options && p.options["موافق"]) ? p.options["موافق"].join(', ') : 'لا يوجد';
+                let votersReject = (p.options && p.options["غير موافق"]) ? p.options["غير موافق"].join(', ') : 'لا يوجد';
+                return `
+                    <div class="bg-white p-3 rounded-xl border border-amber-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <input type="text" id="editPoll-${p.id}" value="${p.question}" class="bg-slate-100 border rounded px-2 py-1 flex-1 font-bold">
+                            <button onclick="updatePoll(${p.id})" class="bg-amber-600 text-white px-2.5 py-1 rounded font-bold mr-2">تعديل</button>
+                            <button onclick="deletePoll(${p.id})" class="bg-rose-600 text-white px-2.5 py-1 rounded font-bold mr-1">حذف</button>
+                        </div>
+                        <div class="text-[11px] text-slate-600 space-y-1 bg-slate-50 p-2 rounded">
+                            <p><strong class="text-emerald-700">موافق (${(p.options && p.options["موافق"]) ? p.options["موافق"].length : 0}):</strong> ${votersApprove}</p>
+                            <p><strong class="text-rose-700">غير موافق (${(p.options && p.options["غير موافق"]) ? p.options["غير موافق"].length : 0}):</strong> ${votersReject}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             document.getElementById('maintenanceTicketsContainer').innerHTML = (db.tickets || []).map(t => `
                 <div class="bg-slate-50 border p-3 rounded-xl flex justify-between items-center">
                     <span><b>${t.apt}:</b> ${t.desc}</span>
@@ -467,13 +507,39 @@
             `).join('');
         }
 
-        function votePoll(pollId, opt) {
+        function votePoll(pollId, choice) {
+            const apt = (db.apartments || []).find(a => a.id === currentResidentId);
+            const residentNameStr = apt ? `${apt.name} - ${apt.tenant}` : `شقة ${currentResidentId}`;
             const p = (db.polls || []).find(x => x.id === pollId);
+            
             if (p) {
-                p.options[opt] = p.options[opt] || [];
-                if (!p.options[opt].includes(currentResidentId)) p.options[opt].push(currentResidentId);
+                if (!p.options) p.options = { "موافق": [], "غير موافق": [] };
+                // إزالة التصويت السابق لو وجد في أي اختيار
+                Object.keys(p.options).forEach(opt => {
+                    p.options[opt] = p.options[opt].filter(v => !v.startsWith(residentNameStr.split(' - ')[0]));
+                });
+                // إضافة التصويت الجديد
+                p.options[choice] = p.options[choice] || [];
+                p.options[choice].push(residentNameStr);
                 saveDB();
-                alert("تم تسجيل صوتك بنجاح!");
+                alert(`تم تسجيل صوتك (${choice}) بنجاح باسم (${residentNameStr})!`);
+            }
+        }
+
+        function updatePoll(pollId) {
+            const newText = document.getElementById(`editPoll-${pollId}`).value.trim();
+            const p = db.polls.find(x => x.id === pollId);
+            if (p && newText) {
+                p.question = newText;
+                saveDB();
+                alert("تم تحديث الاستطلاع بنجاح!");
+            }
+        }
+
+        function deletePoll(pollId) {
+            if (confirm("هل أنت متأكد من حذف هذا الاستطلاع؟")) {
+                db.polls = db.polls.filter(x => x.id !== pollId);
+                saveDB();
             }
         }
 
@@ -491,7 +557,7 @@
         }
 
         function openNewPollModal() {
-            const q = prompt("اكتب سؤال أو قرار استطلاع الرأي:");
+            const q = prompt("اكتب سؤال أو قرار استطلاع الرأي الجديد:");
             if (q) {
                 if (!db.polls) db.polls = [];
                 db.polls.push({ id: Date.now(), question: q, options: { "موافق": [], "غير موافق": [] } });
@@ -502,10 +568,11 @@
         function saveNewApartment() {
             const num = document.getElementById('newAptNumber').value.trim();
             const tenant = document.getElementById('newAptTenant').value.trim();
+            const amount = document.getElementById('newAptAmount').value.trim() || 200;
             if (num && tenant) {
                 const id = num.replace(/\D/g, '') || String(Date.now());
                 if (!db.apartments) db.apartments = [];
-                db.apartments.push({ id: id, name: `شقة ${num}`, tenant: tenant });
+                db.apartments.push({ id: id, name: `شقة ${num}`, tenant: tenant, amount: Number(amount) });
                 closeModal('addAptModal');
                 document.getElementById('newAptNumber').value = '';
                 document.getElementById('newAptTenant').value = '';
