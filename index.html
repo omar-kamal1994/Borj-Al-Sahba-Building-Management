@@ -25,6 +25,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts Cairo for Arabic -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Firebase App & Realtime Database SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #0f172a; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -55,11 +60,11 @@
     </header>
 
     <!-- MAIN VIEWPORT -->
-    <main id="main-content" class="flex-1 overflow-y-auto p-4 relative pb-20">
-        <!-- يتم تعبئة المحتوى ديناميكياً -->
+    <main id="main-content" class="flex-1 overflow-y-auto p-4 relative pb-20 flex items-center justify-center">
+        <div class="text-center text-slate-400 text-xs">جاري الاتصال بقاعدة البيانات السحابية...</div>
     </main>
 
-    <!-- BOTTOM NAVIGATION BAR (ينشط فقط بعد تسجيل الدخول) -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <nav id="bottom-nav" class="hidden bg-slate-900 border-t border-slate-800 py-2 px-3 flex justify-around items-center z-20 shrink-0">
         <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center text-amber-400 text-xs" data-tab="home">
             <i class="fa-solid fa-house text-lg mb-0.5"></i>
@@ -88,12 +93,27 @@
 <div id="modal-container" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"></div>
 
 <script>
-    // --- Application State ---
+    // --- Firebase Configuration (مأخوذة من مشروعك) ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDEDOb6H0Ychi1-hVIh4pSyWNaezk07SM",
+        authDomain: "borjalsahba.firebaseapp.com",
+        databaseURL: "https://borjalsahba-default-rtdb.firebaseio.com",
+        projectId: "borjalsahba",
+        storageBucket: "borjalsahba.firebasestorage.app",
+        messagingSenderId: "635365407917",
+        appId: "1:635365407917:web:06a6884688228384161a24",
+        measurementId: "G-K9CLZJDG1F"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
+
     let currentUser = JSON.parse(localStorage.getItem('borj_current_user')) || null;
     let currentTab = 'home';
 
-    // Initialize clean data (بدون دُمي داتا قديمة)
-    let db = JSON.parse(localStorage.getItem('borj_db')) || {
+    // Default Database Structure
+    let db = {
         apartments: [
             { id: 1, aptNo: '101', owner: 'أحمد كمال (أدمن)', phone: '01012345678', car: 'رقم أ ب ج 123', isRented: false, tenantName: '', tenantPhone: '', isAdmin: true, paidMonths: ['2026-06'] }
         ],
@@ -105,12 +125,26 @@
         doorkeeper: { name: 'عم سعيد', phone: '01111111111', nationalId: '29501011234567', emergencyPhone: '01222222222' }
     };
 
+    // --- Real-time Sync with Firebase ---
+    rtdb.ref('borj_db').on('value', (snapshot) => {
+        const serverData = snapshot.val();
+        if (serverData) {
+            db = serverData;
+        } else {
+            // لو قاعدة البيانات فارغة، نرفع البيانات الافتراضية لأول مرة
+            rtdb.ref('borj_db').set(db);
+        }
+        initApp();
+    });
+
     function saveData() {
-        localStorage.setItem('borj_db', JSON.stringify(db));
-        localStorage.setItem('borj_current_user', JSON.stringify(currentUser));
+        // حفظ البيانات في قاعدة البيانات السحابية لتحدث فوراً عند كل السكان
+        rtdb.ref('borj_db').set(db);
+        if (currentUser) {
+            localStorage.setItem('borj_current_user', JSON.stringify(currentUser));
+        }
     }
 
-    // --- Authentication & Login Flow ---
     function renderAuthScreen() {
         const container = document.getElementById('main-content');
         document.getElementById('bottom-nav').classList.add('hidden');
@@ -118,15 +152,15 @@
         document.getElementById('header-user-badge').innerText = 'تسجيل الدخول';
 
         container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-center px-4">
+            <div class="flex flex-col items-center justify-center h-full text-center px-4 w-full">
                 <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-3xl font-bold shadow-xl shadow-amber-900/50 mb-6">
                     <i class="fa-solid fa-building-shield"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-white mb-2">برج الصحبة</h2>
-                <p class="text-slate-400 text-sm mb-8">نظام إدارة العمارة السكنية الذكي</p>
+                <p class="text-slate-400 text-sm mb-8">نظام إدارة العمارة السكنية (السحابي المباشر)</p>
 
                 <div class="w-full space-y-4">
-                    <button onclick="showLoginModal('admin')" class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition flex items-center justify-center space-x-2 space-x-reverse">
+                    <button onclick="showLoginModal('admin')" class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg shadow-amber-900/35 transition flex items-center justify-center space-x-2 space-x-reverse">
                         <i class="fa-solid fa-user-shield ml-2"></i>
                         <span>دخول المسؤول (الأدمن)</span>
                     </button>
@@ -155,7 +189,7 @@
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">رقم التليفون (كلمة المرور)</label>
-                        <input type="password" id="login-pass" required placeholder="رقم الهاتف المسجل" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500">
+                        <input type="password" id="login-pass" required placeholder="مثال: 01012345678" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500">
                     </div>
                     <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition">تسجيل الدخول</button>
                 </form>
@@ -201,7 +235,6 @@
         document.getElementById('modal-container').classList.add('hidden');
     }
 
-    // --- Main App & Navigation ---
     function initApp() {
         if(!currentUser) {
             renderAuthScreen();
@@ -232,38 +265,37 @@
         else if(tab === 'doorkeeper') renderDoorkeeper();
     }
 
-    // --- HOME VIEW ---
     function renderHome() {
         const container = document.getElementById('main-content');
-        const totalExpenses = db.expenses.reduce((sum, item) => sum + Number(item.amount), 0);
-        const totalRevenues = db.revenues.reduce((sum, item) => sum + Number(item.amount), 0);
-        const currentMonth = db.duesConfig.currentMonth;
-        const unpaidApts = db.apartments.filter(a => !a.paidMonths.includes(currentMonth));
+        const expensesArr = db.expenses || [];
+        const revenuesArr = db.revenues || [];
+        const totalExpenses = expensesArr.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalRevenues = revenuesArr.reduce((sum, item) => sum + Number(item.amount), 0);
+        const currentMonth = db.duesConfig ? db.duesConfig.currentMonth : '2026-06';
+        const apartmentsArr = db.apartments || [];
+        const unpaidApts = apartmentsArr.filter(a => !(a.paidMonths && a.paidMonths.includes(currentMonth)));
 
         container.innerHTML = `
-            <div class="space-y-4">
-                <!-- إعلان سريع من الأدمن -->
+            <div class="space-y-4 w-full">
                 <div class="bg-gradient-to-r from-amber-600/20 to-slate-900 border border-amber-500/30 rounded-2xl p-4">
                     <div class="flex items-center space-x-2 space-x-reverse text-amber-400 mb-1">
                         <i class="fa-solid fa-bullhorn"></i>
                         <span class="font-bold text-sm">تنبيه الإدارة العام</span>
                     </div>
-                    <p class="text-xs text-slate-300">مرحباً بكم في نظام برج الصحبة. يرجى متابعة المصاريف والإعلانات أولاً بأول.</p>
+                    <p class="text-xs text-slate-300">مرحباً بكم في نظام برج الصحبة السحابي المحدث لحظياً.</p>
                 </div>
 
-                <!-- الإحصائيات المالية المباشرة -->
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-3.5">
-                        <span class="text-xs text-slate-400 block mb-1">إجمالي المصروفات</span>
+                    <div onclick="switchTab('finances')" class="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-2xl p-3.5 cursor-pointer transition">
+                        <span class="text-xs text-slate-400 block mb-1">إجمالي المصروفات <i class="fa-solid fa-arrow-left text-[10px] text-amber-400"></i></span>
                         <h3 class="text-lg font-bold text-red-400">${totalExpenses} EGP</h3>
                     </div>
-                    <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-3.5">
-                        <span class="text-xs text-slate-400 block mb-1">إجمالي الإيرادات</span>
+                    <div onclick="switchTab('finances')" class="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-2xl p-3.5 cursor-pointer transition">
+                        <span class="text-xs text-slate-400 block mb-1">إجمالي الإيرادات <i class="fa-solid fa-arrow-left text-[10px] text-amber-400"></i></span>
                         <h3 class="text-lg font-bold text-emerald-400">${totalRevenues} EGP</h3>
                     </div>
                 </div>
 
-                <!-- الشقق المتأخرة (كليك لينك) -->
                 <div onclick="showUnpaidModal()" class="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-2xl p-4 cursor-pointer transition flex items-center justify-between">
                     <div>
                         <span class="text-xs text-amber-400 font-medium block mb-1">الشقق المتأخرة عن شهر (${currentMonth})</span>
@@ -279,7 +311,7 @@
 
     function showUnpaidModal() {
         const currentMonth = db.duesConfig.currentMonth;
-        const unpaidApts = db.apartments.filter(a => !a.paidMonths.includes(currentMonth));
+        const unpaidApts = (db.apartments || []).filter(a => !(a.paidMonths && a.paidMonths.includes(currentMonth)));
         const modal = document.getElementById('modal-container');
         modal.classList.remove('hidden');
         modal.innerHTML = `
@@ -307,26 +339,27 @@
         `;
     }
 
-    // --- FINANCES VIEW ---
     function renderFinances() {
         const container = document.getElementById('main-content');
+        const expenses = db.expenses || [];
+        const emergencyDues = db.emergencyDues || [];
+
         container.innerHTML = `
-            <div class="space-y-4">
+            <div class="space-y-4 w-full">
                 <div class="flex justify-between items-center">
-                    <h2 class="font-bold text-base text-white">الإدارة المالية</h2>
+                    <h2 class="font-bold text-base text-white">الإدارة المالية السحابية</h2>
                     ${currentUser.role === 'admin' ? `
                         <div class="space-x-2 space-x-reverse">
                             <button onclick="showAddExpenseModal()" class="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg">+ مصروف</button>
-                            <button onclick="showAddEmergencyModal()" class="text-xs bg-slate-800 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-lg">+ بند طوارئ</button>
+                            <button onclick="showAddEmergencyModal()" class="text-xs bg-slate-800 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-lg">+ طوارئ</button>
                         </div>
                     ` : ''}
                 </div>
 
-                <!-- المصروفات -->
                 <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4">
                     <h3 class="font-bold text-sm text-amber-400 mb-3">سجل المصروفات</h3>
                     <div class="space-y-2">
-                        ${db.expenses.length === 0 ? '<p class="text-xs text-slate-400 text-center py-2">لا توجد مصروفات مسجلة.</p>' : db.expenses.map((e, idx) => `
+                        ${expenses.length === 0 ? '<p class="text-xs text-slate-400 text-center py-2">لا توجد مصروفات مسجلة.</p>' : expenses.map((e, idx) => `
                             <div class="bg-slate-900/60 p-2.5 rounded-xl flex justify-between items-center text-xs">
                                 <div>
                                     <span class="font-bold text-white block">${e.title}</span>
@@ -341,11 +374,10 @@
                     </div>
                 </div>
 
-                <!-- بنود الطوارئ والإيرادات -->
                 <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4">
                     <h3 class="font-bold text-sm text-amber-400 mb-3">بنود الطوارئ المطلوبة</h3>
                     <div class="space-y-2">
-                        ${db.emergencyDues.length === 0 ? '<p class="text-xs text-slate-400 text-center py-2">لا توجد بنود طوارئ إضافية.</p>' : db.emergencyDues.map((em, idx) => `
+                        ${emergencyDues.length === 0 ? '<p class="text-xs text-slate-400 text-center py-2">لا توجد بنود طوارئ إضافية.</p>' : emergencyDues.map((em, idx) => `
                             <div class="bg-slate-900/60 p-2.5 rounded-xl flex justify-between items-center text-xs">
                                 <div>
                                     <span class="font-bold text-white block">${em.title}</span>
@@ -381,6 +413,7 @@
 
     function addExpense(e) {
         e.preventDefault();
+        if (!db.expenses) db.expenses = [];
         db.expenses.push({
             title: document.getElementById('exp-title').value,
             category: document.getElementById('exp-cat').value,
@@ -388,13 +421,11 @@
         });
         saveData();
         closeModal();
-        renderFinances();
     }
 
     function deleteExpense(idx) {
         db.expenses.splice(idx, 1);
         saveData();
-        renderFinances();
     }
 
     function showAddEmergencyModal() {
@@ -417,32 +448,31 @@
 
     function addEmergency(e) {
         e.preventDefault();
+        if (!db.emergencyDues) db.emergencyDues = [];
         db.emergencyDues.push({
             title: document.getElementById('em-title').value,
             amountPerApt: document.getElementById('em-amount').value
         });
         saveData();
         closeModal();
-        renderFinances();
     }
 
     function deleteEmergency(idx) {
         db.emergencyDues.splice(idx, 1);
         saveData();
-        renderFinances();
     }
 
-    // --- APARTMENTS VIEW ---
     function renderApartments() {
         const container = document.getElementById('main-content');
+        const apartments = db.apartments || [];
         container.innerHTML = `
-            <div class="space-y-4">
+            <div class="space-y-4 w-full">
                 <div class="flex justify-between items-center">
                     <h2 class="font-bold text-base text-white">شقق برج الصحبة</h2>
                     ${currentUser.role === 'admin' ? `<button onclick="showAddAptModal()" class="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg">+ إضافة شقة</button>` : ''}
                 </div>
                 <div class="space-y-3">
-                    ${db.apartments.map((a, idx) => `
+                    ${apartments.map((a, idx) => `
                         <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 space-y-2">
                             <div class="flex justify-between items-start">
                                 <div>
@@ -455,7 +485,8 @@
                                         ${a.isAdmin ? 'أدمن' : 'ساكن'}
                                     </span>
                                     ${currentUser.role === 'admin' ? `
-                                        <button onclick="toggleAdminRole(${idx})" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-0.5 rounded-md">تعديل الرول</button>
+                                        <button onclick="showEditAptModal(${idx})" class="text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-2 py-1 rounded-md">تعديل</button>
+                                        <button onclick="toggleAdminRole(${idx})" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded-md">الرول</button>
                                         <button onclick="deleteApt(${idx})" class="text-slate-500 hover:text-red-400 px-1"><i class="fa-solid fa-trash text-xs"></i></button>
                                     ` : ''}
                                 </div>
@@ -504,6 +535,52 @@
         `;
     }
 
+    function showEditAptModal(idx) {
+        const a = db.apartments[idx];
+        const modal = document.getElementById('modal-container');
+        modal.classList.remove('hidden');
+        modal.innerHTML = `
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+                <h3 class="font-bold text-base text-white mb-3">تعديل بيانات شقة ${a.aptNo}</h3>
+                <form onsubmit="updateApartment(event, ${idx})" class="space-y-3 text-xs">
+                    <input type="text" id="edit-apt-no" value="${a.aptNo}" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="edit-apt-owner" value="${a.owner}" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="edit-apt-phone" value="${a.phone}" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="edit-apt-car" value="${a.car || ''}" placeholder="بيانات السيارة" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    
+                    <div class="flex items-center space-x-2 space-x-reverse pt-1">
+                        <input type="checkbox" id="edit-apt-rented" ${a.isRented ? 'checked' : ''} onchange="document.getElementById('edit-tenant-fields').classList.toggle('hidden', !this.checked)">
+                        <label for="edit-apt-rented" class="text-slate-300">الشقة مؤجرة؟</label>
+                    </div>
+
+                    <div id="edit-tenant-fields" class="${a.isRented ? '' : 'hidden'} space-y-2 pt-1">
+                        <input type="text" id="edit-tenant-name" value="${a.tenantName || ''}" placeholder="اسم المستأجر" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="edit-tenant-phone" value="${a.tenantPhone || ''}" placeholder="تليفون المستأجر" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    </div>
+
+                    <div class="flex space-x-2 space-x-reverse pt-2">
+                        <button type="submit" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold">حفظ التعديلات</button>
+                        <button type="button" onclick="closeModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        `;
+    }
+
+    function updateApartment(e, idx) {
+        e.preventDefault();
+        db.apartments[idx].aptNo = document.getElementById('edit-apt-no').value;
+        db.apartments[idx].owner = document.getElementById('edit-apt-owner').value;
+        db.apartments[idx].phone = document.getElementById('edit-apt-phone').value;
+        db.apartments[idx].car = document.getElementById('edit-apt-car').value;
+        db.apartments[idx].isRented = document.getElementById('edit-apt-rented').checked;
+        db.apartments[idx].tenantName = db.apartments[idx].isRented ? document.getElementById('edit-tenant-name').value : '';
+        db.apartments[idx].tenantPhone = db.apartments[idx].isRented ? document.getElementById('edit-tenant-phone').value : '';
+
+        saveData();
+        closeModal();
+    }
+
     function toggleTenantFields(checkbox) {
         document.getElementById('tenant-fields').classList.toggle('hidden', !checkbox.checked);
     }
@@ -518,35 +595,32 @@
         const tenantName = isRented ? document.getElementById('tenant-name').value : '';
         const tenantPhone = isRented ? document.getElementById('tenant-phone').value : '';
 
+        if (!db.apartments) db.apartments = [];
         db.apartments.push({ aptNo, owner, phone, car, isRented, tenantName, tenantPhone, isAdmin: false, paidMonths: [] });
         saveData();
         closeModal();
-        renderApartments();
 
-        // إرسال رسالة واتساب تلقائية ببيانات الدخول
         window.open(`https://wa.me/${phone}?text=مرحباً بك يا فندم في برج الصحبة. تم إنشاء حسابك لشقة ${aptNo}. اسم المستخدم: ${aptNo} وكلمة المرور: ${phone}`, '_blank');
     }
 
     function toggleAdminRole(idx) {
         db.apartments[idx].isAdmin = !db.apartments[idx].isAdmin;
         saveData();
-        renderApartments();
     }
 
     function deleteApt(idx) {
         db.apartments.splice(idx, 1);
         saveData();
-        renderApartments();
     }
 
-    // --- ANNOUNCEMENTS VIEW ---
     function renderAnnouncements() {
         const container = document.getElementById('main-content');
-        const pending = db.announcements.filter(an => !an.approved && currentUser.role === 'admin');
-        const approved = db.announcements.filter(an => an.approved);
+        const announcements = db.announcements || [];
+        const pending = announcements.filter(an => !an.approved && currentUser.role === 'admin');
+        const approved = announcements.filter(an => an.approved);
 
         container.innerHTML = `
-            <div class="space-y-4">
+            <div class="space-y-4 w-full">
                 <div class="flex justify-between items-center">
                     <h2 class="font-bold text-base text-white">لوحة إعلانات العمارة</h2>
                     <button onclick="showAddAnnouncementModal()" class="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg">+ إضافة إعلان</button>
@@ -555,7 +629,7 @@
                 ${currentUser.role === 'admin' && pending.length > 0 ? `
                     <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 space-y-2">
                         <h3 class="font-bold text-xs text-amber-400">إعلانات بانتظار موافقتك (${pending.length})</h3>
-                        ${pending.map((p, idx) => `
+                        ${pending.map((p) => `
                             <div class="bg-slate-900 p-2.5 rounded-xl flex justify-between items-center text-xs">
                                 <div>
                                     <span class="font-bold text-white block">${p.title}</span>
@@ -605,6 +679,7 @@
 
     function addAnnouncement(e) {
         e.preventDefault();
+        if (!db.announcements) db.announcements = [];
         db.announcements.push({
             id: Date.now(),
             title: document.getElementById('an-title').value,
@@ -615,21 +690,19 @@
         });
         saveData();
         closeModal();
-        renderAnnouncements();
         alert(currentUser.role === 'admin' ? 'تم نشر الإعلان بنجاح!' : 'تم إرسال الإعلان للأدمن للمراجعة والموافقة.');
     }
 
     function approveAnnouncement(id) {
         const an = db.announcements.find(a => a.id === id);
-        if(an) { an.approved = true; saveData(); renderAnnouncements(); }
+        if(an) { an.approved = true; saveData(); }
     }
 
-    // --- DOORKEEPER VIEW ---
     function renderDoorkeeper() {
         const container = document.getElementById('main-content');
-        const dk = db.doorkeeper;
+        const dk = db.doorkeeper || { name: 'عم سعيد', phone: '01111111111', nationalId: '29501011234567', emergencyPhone: '01222222222' };
         container.innerHTML = `
-            <div class="space-y-4">
+            <div class="space-y-4 w-full">
                 <h2 class="font-bold text-base text-white">بيانات بواب العمارة</h2>
                 <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 space-y-3 text-xs">
                     <div class="flex items-center space-x-3 space-x-reverse mb-2">
@@ -685,11 +758,7 @@
         };
         saveData();
         closeModal();
-        renderDoorkeeper();
     }
-
-    // Run Initial App Check
-    initApp();
 </script>
 </body>
 </html>
