@@ -58,7 +58,7 @@
                     <div id="myPaymentStatusBadge" class="bg-amber-400 text-emerald-950 px-3 py-1 rounded-full text-xs font-bold shadow">جاري التحميل...</div>
                 </div>
                 <div class="mt-4 pt-3 border-t border-white/15 flex justify-between items-center text-xs">
-                    <span id="myMonthlyDuesText">الاشتراك الشهري: 200 جـ</span>
+                    <span id="myMonthlyDuesText">الإجمالي المطلوب: 200 جـ</span>
                     <button onclick="notifyPaymentSent()" class="bg-white text-emerald-800 px-3 py-1.5 rounded-xl font-bold shadow hover:bg-emerald-50 transition">إشعار سداد المستحقات</button>
                 </div>
             </div>
@@ -68,11 +68,11 @@
                     <h3 id="statTotalBalance" class="text-base font-black text-emerald-700">0 جـ</h3>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
-                    <span class="text-[10px] text-slate-500 font-semibold block mb-1">المحصل الفعلى هذا الشهر</span>
+                    <span class="text-[10px] text-slate-500 font-semibold block mb-1">المحصل الفعلي هذا الشهر</span>
                     <h3 id="statMonthCollected" class="text-base font-black text-blue-600">0 جـ</h3>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
-                    <span class="text-[10px] text-slate-500 font-semibold block mb-1">شقق متأخرة</span>
+                    <span class="text-[10px] text-slate-500 font-semibold block mb-1">شقق غير مسددة بالكامل</span>
                     <h3 id="statLateCount" class="text-base font-black text-rose-600">0 شقق</h3>
                 </div>
             </div>
@@ -94,7 +94,7 @@
                             <tr>
                                 <th class="p-2.5">الشقة</th>
                                 <th class="p-2.5">المالك / الساكن</th>
-                                <th class="p-2.5">المطلوب</th>
+                                <th class="p-2.5">المطلوب (شهري + إضافي)</th>
                                 <th class="p-2.5">الحالة / المدفوع</th>
                                 <th class="p-2.5 text-center">الإجراءات</th>
                             </tr>
@@ -117,7 +117,7 @@
                             <tr>
                                 <th class="p-2">الشقة</th>
                                 <th class="p-2">الساكن</th>
-                                <th class="p-2">المدفوع / المطلوب</th>
+                                <th class="p-2">المدفوع / الإجمالي المطلوب</th>
                                 <th class="p-2">المتبقي</th>
                                 <th class="p-2 text-center">الحالة العامة</th>
                             </tr>
@@ -146,7 +146,7 @@
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <h4 class="font-bold text-xs text-slate-700">بنود الإيرادات الإضافية المطلوبة:</h4>
+                    <h4 class="font-bold text-xs text-slate-700">بنود الإيرادات الإضافية المطلوبة من الشقق:</h4>
                     <div id="extraRevenuesListContainer" class="space-y-2 text-xs"></div>
                 </div>
                 <div class="space-y-2 pt-2 border-t">
@@ -296,6 +296,13 @@
             rtdb.ref('borj_elsohba_db').set(db);
         }
 
+        // دالة لحساب إجمالي المطلوب من الشقة (الاشتراك الشهري + إجمالي بنود الإيرادات الإضافية)
+        function getTotalAptDue(apt) {
+            let base = Number(apt.amount || 200);
+            let extra = (db.extraRevenues || []).reduce((sum, er) => sum + Number(er.amountPerApt || 0), 0);
+            return base + extra;
+        }
+
         function initApp() {
             if (db.apartments && db.apartments.length > 0 && !db.apartments.some(a => a.id === currentResidentId)) {
                 currentResidentId = db.apartments[0].id;
@@ -376,20 +383,20 @@
             if (!db.payments) db.payments = {};
             if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
             const payment = db.payments[currentMonth][apt.id] || { status: 'pending', paidAmount: 0 };
-            const aptAmount = apt.amount || 200;
+            const totalDue = getTotalAptDue(apt);
             const paid = Number(payment.paidAmount || 0);
 
             document.getElementById('myApartmentTitle').innerText = apt.name;
             document.getElementById('myApartmentTenant').innerText = `المالك/الساكن: ${apt.tenant}`;
-            document.getElementById('myMonthlyDuesText').innerText = `الاشتراك المطلوب: ${aptAmount} جـ (المدفوع: ${paid} جـ)`;
+            document.getElementById('myMonthlyDuesText').innerText = `الإجمالي المطلوب (اشتراك + إضافات): ${totalDue} جـ (المدفوع: ${paid} جـ)`;
                         
             const statusBadge = document.getElementById('myPaymentStatusBadge');
-            if (payment.status === 'paid') {
+            if (payment.status === 'paid' || paid >= totalDue) {
                 statusBadge.className = "bg-emerald-400 text-emerald-950 px-3 py-1 rounded-full text-xs font-bold shadow";
                 statusBadge.innerHTML = `<i class="fa-solid fa-check"></i> مسدد بالكامل`;
             } else if (paid > 0) {
                 statusBadge.className = "bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow";
-                statusBadge.innerHTML = `<i class="fa-solid fa-clock"></i> مدفوع جزء (متبقي ${aptAmount - paid} جـ)`;
+                statusBadge.innerHTML = `<i class="fa-solid fa-clock"></i> مدفوع جزء (متبقي ${totalDue - paid} جـ)`;
             } else {
                 statusBadge.className = "bg-slate-300 text-slate-700 px-3 py-1 rounded-full text-xs font-bold shadow";
                 statusBadge.innerHTML = `- لم يتم الدفع`;
@@ -402,7 +409,8 @@
                 const p = monthPayments[a.id];
                 const pAmt = Number(p ? p.paidAmount || 0 : 0);
                 totalIncome += pAmt;
-                if (!p || p.status !== 'paid') lateCount++;
+                const req = getTotalAptDue(a);
+                if (!p || p.status !== 'paid' && pAmt < req) lateCount++;
             });
 
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
@@ -436,14 +444,14 @@
 
             tbody.innerHTML = db.apartments.map(apt => {
                 const p = monthPayments[apt.id] || { status: 'pending', paidAmount: 0 };
-                const aptAmount = apt.amount || 200;
+                const totalDue = getTotalAptDue(apt);
                 const paid = Number(p.paidAmount || 0);
 
                 let badge = `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-bold">-</span>`;
-                if (p.status === 'paid') {
+                if (p.status === 'paid' || paid >= totalDue) {
                     badge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">مسدد (${paid} جـ)</span>`;
                 } else if (paid > 0) {
-                    badge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">جزئي: دفع ${paid} / متبقي ${aptAmount - paid} جـ</span>`;
+                    badge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">جزئي: دفع ${paid} / متبقي ${totalDue - paid} جـ</span>`;
                 } else {
                     badge = `<span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold">غير مسدد (-)</span>`;
                 }
@@ -453,13 +461,13 @@
                         <td class="p-2.5 font-bold">${apt.name}</td>
                         <td class="p-2.5">${apt.tenant}</td>
                         <td class="p-2.5 font-bold">
-                            <span class="manager-only hidden"><input type="number" value="${aptAmount}" onchange="updateAptAmount('${apt.id}', this.value)" class="w-16 bg-slate-100 border rounded px-1 py-0.5 text-center font-bold"></span>
-                            <span class="resident-only">${aptAmount} جـ</span>
+                            <span class="manager-only hidden"><input type="number" value="${apt.amount || 200}" onchange="updateAptAmount('${apt.id}', this.value)" class="w-16 bg-slate-100 border rounded px-1 py-0.5 text-center font-bold" title="الأساسي الشهري"></span>
+                            <span class="resident-only">${totalDue} جـ</span> <span class="text-[10px] text-slate-400 font-normal">(شامل الإضافات)</span>
                         </td>
                         <td class="p-2.5">${badge}</td>
                         <td class="p-2.5 text-center flex justify-center gap-1.5">
-                            <button onclick="promptPartialPayment('${apt.id}', ${aptAmount})" class="manager-only bg-emerald-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hidden">تسجيل دفع</button>
-                            <button onclick="deleteApartment('${apt.id}')" class="manager-only bg-rose-600 text-white px-2 py-1 rounded text-[11px] font-bold hidden"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="promptPartialPayment('${apt.id}', ${totalDue})" class="manager-only bg-emerald-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hidden">تسجيل دفع</button>
+                            <button onclick="deleteApartment('${apt.id}')" class="manager-only bg-rose-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hidden"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -500,8 +508,8 @@
 
         function notifyPaymentSent() {
             const apt = db.apartments.find(a => a.id === currentResidentId);
-            const totalDue = apt ? (apt.amount || 200) : 200;
-            const input = prompt(`أدخل المبلغ الذي قمت بسداده (المطلوب: ${totalDue} جنيه):`, totalDue);
+            const totalDue = apt ? getTotalAptDue(apt) : 200;
+            const input = prompt(`أدخل المبلغ الذي قمت بسداده (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
                 const currentMonth = "2026-10";
@@ -558,12 +566,12 @@
             if (db.apartments) {
                 arrearsBody.innerHTML = db.apartments.map(apt => {
                     const p = monthPayments[apt.id] || { status: 'pending', paidAmount: 0 };
-                    const totalDue = Number(apt.amount || 200);
+                    const totalDue = getTotalAptDue(apt);
                     const paid = Number(p.paidAmount || 0);
                     const remaining = Math.max(0, totalDue - paid);
 
                     let statusBadge = '';
-                    if (p.status === 'paid') {
+                    if (p.status === 'paid' || paid >= totalDue) {
                         statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">مسدد بالكامل</span>`;
                     } else if (paid > 0) {
                         statusBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">مدفوع جزء (متبقي ${remaining})</span>`;
@@ -670,7 +678,7 @@
                 document.getElementById('extraRevTitle').value = '';
                 document.getElementById('extraRevAmount').value = '';
                 saveDB();
-                alert("تم إضافة الإيراد الإضافي بنجاح!");
+                alert("تم إضافة الإيراد الإضافي وتعميمه على كافة الشقق بنجاح!");
             } else {
                 alert("يرجى إدخال اسم البند والمبلغ بشكل صحيح.");
             }
@@ -728,7 +736,7 @@
 
         function saveNewExpense() {
             const title = document.getElementById('expTitle').value;
-            const amount = document.getElementById('expAmount').value;
+            const amount = document.getElementById('expAmount.value');
             if (title && amount) {
                 if (!db.expenses) db.expenses = [];
                 db.expenses.push({ id: Date.now(), title: title, amount: amount, date: new Date().toISOString().split('T')[0] });
