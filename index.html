@@ -84,32 +84,39 @@
             </div>
         </div>
 
-        <!-- APARTMENTS (Responsive Mobile Cards Layout) -->
+        <!-- APARTMENTS -->
         <div id="content-apartments" class="space-y-3 hidden">
             <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <h3 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-building-user text-emerald-600"></i> إدارة شقق برج الصحبة والتحصيل</h3>
+                    <h3 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-building-user text-emerald-600"></i> إدارة شقق برج الصحبة (تستوعب حتى 66+ شقة)</h3>
                     <div class="flex gap-1.5 w-full sm:w-auto">
-                        <button onclick="exportApartmentsReport()" class="flex-1 sm:flex-none bg-teal-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-center"><i class="fa-solid fa-download"></i> تصدير التقرير</button>
+                        <button onclick="window.print()" class="flex-1 sm:flex-none bg-teal-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-center"><i class="fa-solid fa-print"></i> طباعة الشقق</button>
                         <button onclick="openAddApartmentModal()" class="manager-only flex-1 sm:flex-none bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold hidden text-center"><i class="fa-solid fa-plus"></i> إضافة شقة</button>
                     </div>
                 </div>
-                
-                <!-- Mobile Card View for Apartments -->
-                <div id="apartmentsCardsContainer" class="space-y-2.5"></div>
+                <div id="apartmentsCardsContainer" class="space-y-2.5 max-h-[65vh] overflow-y-auto pr-1"></div>
             </div>
         </div>
 
         <!-- FINANCE -->
         <div id="content-finance" class="space-y-3 hidden">
+            <!-- قسم إدارة الشهور وترحيل الرصيد -->
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-3.5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div>
+                    <h3 class="font-bold text-xs"><i class="fa-solid fa-calendar-days text-amber-400"></i> الشهر المالي الحالي: <span id="currentMonthTitle" class="text-amber-300">أكتوبر 2026</span></h3>
+                    <p class="text-[10px] text-emerald-200 mt-0.5">يتم ترحيل الفائض أو العجز تلقائياً عند فتح شهر جديد.</p>
+                </div>
+                <button onclick="openNewMonthModal()" class="manager-only bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-bold hidden shadow"><i class="fa-solid fa-forward"></i> بدء شهر جديد وتدوير الحسابات</button>
+            </div>
+
             <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl shadow-sm space-y-2.5">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-amber-900 text-xs"><i class="fa-solid fa-file-lines text-amber-600"></i> كشف المتأخرات والتحصيل</h3>
                     <button onclick="window.print()" class="bg-amber-600 text-white px-2.5 py-1 rounded-xl text-[11px] font-bold"><i class="fa-solid fa-print"></i> طباعة</button>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
                     <table class="w-full text-right text-[11px] bg-white rounded-xl overflow-hidden border">
-                        <thead class="bg-amber-100 text-amber-900">
+                        <thead class="bg-amber-100 text-amber-900 sticky top-0">
                             <tr>
                                 <th class="p-2">الشقة</th>
                                 <th class="p-2">الساكن</th>
@@ -131,14 +138,18 @@
                         <button onclick="openAddExpenseModal()" class="manager-only bg-rose-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold hidden">- مصروف</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-emerald-50 border p-2.5 rounded-xl">
-                        <span class="text-[10px] text-emerald-800 font-semibold">المحصل الفعلي</span>
-                        <h4 id="finTotalIncome" class="text-sm font-black text-emerald-700 mt-0.5">0 جـ</h4>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-slate-50 border p-2 rounded-xl text-center">
+                        <span class="text-[9px] text-slate-500 block">الرصيد المترحّل</span>
+                        <h4 id="finCarriedBalance" class="text-xs font-black text-slate-700 mt-0.5">0 جـ</h4>
                     </div>
-                    <div class="bg-rose-50 border p-2.5 rounded-xl">
-                        <span class="text-[10px] text-rose-800 font-semibold">المصروفات</span>
-                        <h4 id="finTotalExpenses" class="text-sm font-black text-rose-700 mt-0.5">0 جـ</h4>
+                    <div class="bg-emerald-50 border p-2 rounded-xl text-center">
+                        <span class="text-[9px] text-emerald-800 block">المحصل الفعلي</span>
+                        <h4 id="finTotalIncome" class="text-xs font-black text-emerald-700 mt-0.5">0 جـ</h4>
+                    </div>
+                    <div class="bg-rose-50 border p-2 rounded-xl text-center">
+                        <span class="text-[9px] text-rose-800 block">المصروفات</span>
+                        <h4 id="finTotalExpenses" class="text-xs font-black text-rose-700 mt-0.5">0 جـ</h4>
                     </div>
                 </div>
                 <div class="space-y-1.5">
@@ -177,17 +188,14 @@
             </div>
         </div>
 
-        <!-- EMERGENCY -->
+        <!-- EMERGENCY (Fully Manageable) -->
         <div id="content-emergency" class="space-y-3 hidden">
             <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h3 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-address-book text-emerald-600"></i> أرقام الطوارئ والخدمات</h3>
-                <div class="bg-slate-50 border p-2.5 rounded-xl flex justify-between items-center text-xs">
-                    <div>
-                        <h4 class="font-bold text-slate-800">عماد (حارس العقار)</h4>
-                        <p class="text-slate-500 text-[10px]">01000000000</p>
-                    </div>
-                    <a href="tel:01000000000" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold">اتصال</a>
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-address-book text-emerald-600"></i> أرقام الطوارئ والخدمات</h3>
+                    <button onclick="openAddEmergencyModal()" class="manager-only bg-emerald-600 text-white px-2.5 py-1 rounded-xl text-[11px] font-bold hidden">+ إضافة جهة</button>
                 </div>
+                <div id="emergencyContactsContainer" class="space-y-2 text-xs"></div>
             </div>
         </div>
     </main>
@@ -204,6 +212,47 @@
             <div class="flex gap-2 pt-1">
                 <button onclick="submitVote()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">تأكيد وإرسال</button>
                 <button onclick="closeModal('voteModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div id="ticketModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
+            <h3 class="font-bold text-sm text-slate-800">تسجيل بلاغ عطل أو صيانة</h3>
+            <input type="text" id="ticketAptNo" placeholder="رقم الشقة (مثل: 101)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="ticketOwnerName" placeholder="اسم صاحب الشقة / الساكن" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <textarea id="ticketDesc" placeholder="مكان ووصف المشكلة بالتفصيل (مثل: عطل في أسانسير الدور الثالث)..." rows="3" class="w-full bg-slate-100 border rounded-xl p-2.5"></textarea>
+            <div class="flex gap-2 pt-1">
+                <button onclick="submitTicket()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">إرسال البلاغ</button>
+                <button onclick="closeModal('ticketModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Modal -->
+    <div id="emergencyModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
+            <h3 class="font-bold text-sm" id="emergencyModalTitle">إضافة جهة طوارئ جديدة</h3>
+            <input type="hidden" id="emergencyIndex">
+            <input type="text" id="emergencyName" placeholder="اسم الجهة أو الشخص (مثل: عماد البواب)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="emergencyPhone" placeholder="رقم الهاتف (مثل: 01000000000)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <div class="flex gap-2 pt-1">
+                <button onclick="saveEmergencyContact()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">حفظ</button>
+                <button onclick="closeModal('emergencyModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Month Modal -->
+    <div id="newMonthModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
+            <h3 class="font-bold text-sm text-amber-900">بدء شهر مالى جديد</h3>
+            <p class="text-slate-600">سيتم حفظ الشهر الحالي وترحيل الرصيد (فائض أو عجز) للشهر الجديد.</p>
+            <input type="text" id="newMonthNameInput" placeholder="اسم الشهر الجديد (مثل: نوفمبر 2026)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <div class="flex gap-2 pt-1">
+                <button onclick="confirmStartNewMonth()" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold">تأكيد وبدء الشهر</button>
+                <button onclick="closeModal('newMonthModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
             </div>
         </div>
     </div>
@@ -286,13 +335,15 @@
         const rtdb = firebase.database();
 
         const initialData = {
+            currentMonth: "أكتوبر 2026",
+            carriedBalance: 0,
             apartments: [
                 { id: "101", name: "شقة 101", tenant: "أحمد محمد", amount: 200 },
                 { id: "102", name: "شقة 102", tenant: "محمود حسن", amount: 200 },
                 { id: "201", name: "شقة 201", tenant: "كريم عبد الله", amount: 200 }
             ],
             payments: {
-                "2026-10": {
+                "أكتوبر 2026": {
                     "101": { status: "paid", paidAmount: 200, note: "نقداً" },
                     "102": { status: "pending", paidAmount: 0 },
                     "201": { status: "pending", paidAmount: 0 }
@@ -306,7 +357,10 @@
                 { id: 1, question: "هل ترغب في تركيب كاميرات مراقبة جديدة عالبوابة؟", options: { "موافق": ["شقة 101 - أحمد محمد"], "غير موافق": [] } }
             ],
             tickets: [
-                { id: 1, apt: "شقة 201", desc: "لمبة الدور الثاني محروقة", status: "جاري الإصلاح 🔧", date: "2026-10-06" }
+                { id: 1, apt: "شقة 201", owner: "كريم عبد الله", desc: "لمبة الدور الثاني محروقة", status: "جاري الإصلاح 🔧", date: "2026-10-06" }
+            ],
+            emergency: [
+                { name: "عماد (حارس العقار)", phone: "01000000000" }
             ]
         };
 
@@ -318,7 +372,10 @@
             const serverData = snapshot.val();
             if (serverData) {
                 db = serverData;
+                if (!db.currentMonth) db.currentMonth = "أكتوبر 2026";
+                if (!db.carriedBalance) db.carriedBalance = 0;
                 if (!db.extraRevenues) db.extraRevenues = [];
+                if (!db.emergency) db.emergency = [{ name: "عماد (حارس العقار)", phone: "01000000000" }];
             } else {
                 rtdb.ref('borj_elsohba_db').set(initialData);
             }
@@ -345,10 +402,13 @@
                 select.value = currentResidentId;
             }
 
+            document.getElementById('currentMonthTitle').innerText = db.currentMonth || "أكتوبر 2026";
+
             renderHome();
             renderApartments();
             renderFinance();
             renderCommunity();
+            renderEmergency();
             updateManagerUI();
         }
 
@@ -411,16 +471,16 @@
                 document.getElementById('myApartmentTenant').innerText = "يرجى إضافة شقة من تبويب الشقق";
                 return;
             }
-            const currentMonth = "2026-10";
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
             if (!db.payments) db.payments = {};
-            if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-            const payment = db.payments[currentMonth][apt.id] || { status: 'pending', paidAmount: 0 };
+            if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
+            const payment = db.payments[activeMonth][apt.id] || { status: 'pending', paidAmount: 0 };
             const totalDue = getTotalAptDue(apt);
             const paid = Number(payment.paidAmount || 0);
 
             document.getElementById('myApartmentTitle').innerText = apt.name;
             document.getElementById('myApartmentTenant').innerText = `المالك/الساكن: ${apt.tenant}`;
-            document.getElementById('myMonthlyDuesText').innerText = `الإجمالي المطلوب: ${totalDue} جـ (المدفوع: ${paid} جـ)`;
+            document.getElementById('myMonthlyDuesText').innerText = `الإجمالي المطلوب (${activeMonth}): ${totalDue} جـ (المدفوع: ${paid} جـ)`;
                         
             const statusBadge = document.getElementById('myPaymentStatusBadge');
             if (payment.status === 'paid' || paid >= totalDue) {
@@ -436,7 +496,7 @@
 
             let totalIncome = 0;
             let lateCount = 0;
-            const monthPayments = db.payments[currentMonth] || {};
+            const monthPayments = db.payments[activeMonth] || {};
             db.apartments.forEach(a => {
                 const p = monthPayments[a.id];
                 const pAmt = Number(p ? p.paidAmount || 0 : 0);
@@ -446,8 +506,9 @@
             });
 
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
+            const netBalance = Number(db.carriedBalance || 0) + totalIncome - totalExpenses;
 
-            document.getElementById('statTotalBalance').innerText = `${totalIncome - totalExpenses} جـ`;
+            document.getElementById('statTotalBalance').innerText = `${netBalance} جـ`;
             document.getElementById('statMonthCollected').innerText = `${totalIncome} جـ`;
             document.getElementById('statLateCount').innerText = `${lateCount} شقق`;
 
@@ -470,12 +531,11 @@
             }).join('');
         }
 
-        // Render Apartments as Responsive Mobile Cards
         function renderApartments() {
-            const currentMonth = "2026-10";
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
             if (!db.payments) db.payments = {};
-            if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-            const monthPayments = db.payments[currentMonth];
+            if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
+            const monthPayments = db.payments[activeMonth];
             const container = document.getElementById('apartmentsCardsContainer');
 
             if (!db.apartments || db.apartments.length === 0) {
@@ -602,36 +662,14 @@
             }
         }
 
-        function exportApartmentsReport() {
-            const currentMonth = "2026-10";
-            const monthPayments = (db.payments && db.payments[currentMonth]) ? db.payments[currentMonth] : {};
-            
-            let textReport = "--- تقرير شقق برج الصحبة والمديونيات ---\n\n";
-            db.apartments.forEach(apt => {
-                const p = monthPayments[apt.id] || { status: 'pending', paidAmount: 0 };
-                const totalDue = getTotalAptDue(apt);
-                const paid = Number(p.paidAmount || 0);
-                const remaining = Math.max(0, totalDue - paid);
-                
-                textReport += `${apt.name} | الساكن: ${apt.tenant} | المطلوب: ${totalDue} جـ | المدفوع: ${paid} جـ | المتبقي: ${remaining} جـ\n`;
-            });
-
-            const blob = new Blob([textReport], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'BorjAlSahba_Apartments_Report.txt';
-            a.click();
-        }
-
         function promptPartialPayment(aptId, totalDue) {
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
             const input = prompt(`أدخل المبلغ المدفوع (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
-                const currentMonth = "2026-10";
-                if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
+                if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
                 
-                db.payments[currentMonth][aptId] = {
+                db.payments[activeMonth][aptId] = {
                     status: paid >= totalDue ? 'paid' : 'pending',
                     paidAmount: paid
                 };
@@ -650,12 +688,12 @@
         function notifyPaymentSent() {
             const apt = db.apartments.find(a => a.id === currentResidentId);
             const totalDue = apt ? getTotalAptDue(apt) : 200;
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
             const input = prompt(`أدخل المبلغ الذي قمت بسداده (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
-                const currentMonth = "2026-10";
-                if (!db.payments[currentMonth]) db.payments[currentMonth] = {};
-                db.payments[currentMonth][currentResidentId] = {
+                if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
+                db.payments[activeMonth][currentResidentId] = {
                     status: paid >= totalDue ? 'paid' : 'pending',
                     paidAmount: paid
                 };
@@ -664,9 +702,44 @@
             }
         }
 
+        function openNewMonthModal() {
+            document.getElementById('newMonthModal').classList.remove('hidden');
+        }
+
+        function confirmStartNewMonth() {
+            const newMonthName = document.getElementById('newMonthNameInput').value.trim();
+            if (!newMonthName) {
+                alert("يرجى كتابة اسم الشهر الجديد.");
+                return;
+            }
+
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const monthPayments = db.payments[activeMonth] || {};
+            let totalIncome = 0;
+            db.apartments.forEach(a => {
+                const p = monthPayments[a.id];
+                totalIncome += Number(p ? p.paidAmount || 0 : 0);
+            });
+            const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
+            
+            // حساب الرصيد المتبقي للترحيل
+            const netOld = Number(db.carriedBalance || 0) + totalIncome - totalExpenses;
+
+            // تحديث البيانات للشهر الجديد
+            db.carriedBalance = netOld;
+            db.currentMonth = newMonthName;
+            db.extraRevenues = []; // تصفير الإيرادات الإضافية للشهر الجديد
+            db.expenses = []; // تصفير مصروفات الشهر الجديد
+            if (!db.payments[newMonthName]) db.payments[newMonthName] = {};
+
+            saveDB();
+            closeModal('newMonthModal');
+            alert(`تم بدء الشهر الجديد (${newMonthName}) بنجاح وتم تترحيل الرصيد السابق (${netOld} جـ)!`);
+        }
+
         function renderFinance() {
-            const currentMonth = "2026-10";
-            const monthPayments = (db.payments && db.payments[currentMonth]) ? db.payments[currentMonth] : {};
+            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const monthPayments = (db.payments && db.payments[activeMonth]) ? db.payments[activeMonth] : {};
             let totalIncome = 0;
             if (db.apartments) {
                 db.apartments.forEach(a => {
@@ -676,7 +749,9 @@
             }
 
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
+            const carried = Number(db.carriedBalance || 0);
 
+            document.getElementById('finCarriedBalance').innerText = `${carried} جـ`;
             document.getElementById('finTotalIncome').innerText = `${totalIncome} جـ`;
             document.getElementById('finTotalExpenses').innerText = `${totalExpenses} جـ`;
 
@@ -735,7 +810,7 @@
                 const rejectCount = (p.options && p.options["غير موافق"]) ? p.options["غير موافق"].length : 0;
                 return `
                     <div class="bg-slate-50 border p-3 rounded-xl space-y-2">
-                        <h4 class="font-bold text-slate-800 text-xs">${p.question}</h4>
+                        <p class="font-bold text-slate-800 text-xs">${p.question}</p>
                         <div class="flex justify-between text-[11px] text-slate-500 font-bold px-1">
                             <span class="text-emerald-700">موافق: ${approveCount}</span>
                             <span class="text-rose-700">غير موافق: ${rejectCount}</span>
@@ -769,12 +844,129 @@
                 `;
             }).join('');
 
-            document.getElementById('maintenanceTicketsContainer').innerHTML = (db.tickets || []).map(t => `
+            document.getElementById('maintenanceTicketsContainer').innerHTML = (db.tickets || []).map((t, idx) => `
                 <div class="bg-slate-50 border p-2.5 rounded-xl flex justify-between items-center text-xs">
-                    <span><b>${t.apt}:</b> ${t.desc}</span>
-                    <span class="text-teal-700 font-bold">${t.status}</span>
+                    <div>
+                        <span class="font-bold text-emerald-900">${t.apt} (${t.owner}):</span>
+                        <p class="text-slate-600 mt-0.5">${t.desc}</p>
+                        <span class="text-[10px] text-slate-400">${t.date}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-teal-700 font-bold">${t.status}</span>
+                        <button onclick="deleteTicket(${idx})" class="manager-only text-rose-600 hidden"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        function renderEmergency() {
+            const container = document.getElementById('emergencyContactsContainer');
+            if (!db.emergency || db.emergency.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 py-2 text-xs">لا توجد جهات طوارئ مسجلة.</p>`;
+                return;
+            }
+
+            container.innerHTML = db.emergency.map((em, idx) => `
+                <div class="bg-slate-50 border p-2.5 rounded-xl flex justify-between items-center text-xs">
+                    <div>
+                        <h4 class="font-bold text-slate-800">${em.name}</h4>
+                        <p class="text-slate-500 text-[11px]">${em.phone}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="tel:${em.phone}" class="bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold">اتصال</a>
+                        <button onclick="openEditEmergencyModal(${idx})" class="manager-only bg-blue-600 text-white px-2 py-1 rounded hidden"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteEmergencyContact(${idx})" class="manager-only bg-rose-600 text-white px-2 py-1 rounded hidden"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            updateManagerUI();
+        }
+
+        function openAddEmergencyModal() {
+            document.getElementById('emergencyModalTitle').innerText = "إضافة جهة طوارئ جديدة";
+            document.getElementById('emergencyIndex').value = "";
+            document.getElementById('emergencyName').value = "";
+            document.getElementById('emergencyPhone').value = "";
+            document.getElementById('emergencyModal').classList.remove('hidden');
+        }
+
+        function openEditEmergencyModal(idx) {
+            const em = db.emergency[idx];
+            document.getElementById('emergencyModalTitle').innerText = "تعديل جهة طوارئ";
+            document.getElementById('emergencyIndex').value = idx;
+            document.getElementById('emergencyName').value = em.name;
+            document.getElementById('emergencyPhone').value = em.phone;
+            document.getElementById('emergencyModal').classList.remove('hidden');
+        }
+
+        function saveEmergencyContact() {
+            const idx = document.getElementById('emergencyIndex').value;
+            const name = document.getElementById('emergencyName').value.trim();
+            const phone = document.getElementById('emergencyPhone').value.trim();
+
+            if (name && phone) {
+                if (!db.emergency) db.emergency = [];
+                if (idx === "") {
+                    db.emergency.push({ name, phone });
+                } else {
+                    db.emergency[Number(idx)] = { name, phone };
+                }
+                saveDB();
+                closeModal('emergencyModal');
+                alert("تم حفظ جهة الطوارئ بنجاح!");
+            } else {
+                alert("يرجى إدخال اسم الجهة ورقم الهاتف.");
+            }
+        }
+
+        function deleteEmergencyContact(idx) {
+            if (confirm("هل أنت متأكد من حذف جهة الطوارئ هذه؟")) {
+                db.emergency.splice(idx, 1);
+                saveDB();
+            }
+        }
+
+        function openNewTicketModal() {
+            const apt = (db.apartments || []).find(a => a.id === currentResidentId);
+            if (apt) {
+                document.getElementById('ticketAptNo').value = apt.name.replace('شقة ', '');
+                document.getElementById('ticketOwnerName').value = apt.tenant;
+            } else {
+                document.getElementById('ticketAptNo').value = '';
+                document.getElementById('ticketOwnerName').value = '';
+            }
+            document.getElementById('ticketDesc').value = '';
+            document.getElementById('ticketModal').classList.remove('hidden');
+        }
+
+        function submitTicket() {
+            const aptNo = document.getElementById('ticketAptNo').value.trim();
+            const owner = document.getElementById('ticketOwnerName').value.trim();
+            const desc = document.getElementById('ticketDesc').value.trim();
+
+            if (aptNo && owner && desc) {
+                if (!db.tickets) db.tickets = [];
+                db.tickets.push({
+                    id: Date.now(),
+                    apt: `شقة ${aptNo}`,
+                    owner: owner,
+                    desc: desc,
+                    status: "بلاغ جديد 🔴",
+                    date: new Date().toISOString().split('T')[0]
+                });
+                saveDB();
+                closeModal('ticketModal');
+                alert("تم إرسال بلاغ العطل بنجاح!");
+            } else {
+                alert("يرجى تعبئة كافة الحقول (رقم الشقة، اسم الساكن، ووصف المشكلة).");
+            }
+        }
+
+        function deleteTicket(idx) {
+            if (confirm("هل أنت متأكد من حذف هذا البلاغ؟")) {
+                db.tickets.splice(idx, 1);
+                saveDB();
+            }
         }
 
         function downloadPollReport(pollId) {
@@ -846,16 +1038,6 @@
         function deleteExpense(idx) {
             if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {
                 db.expenses.splice(idx, 1);
-                saveDB();
-            }
-        }
-
-        function openNewTicketModal() {
-            const desc = prompt("اكتب وصف العطل:");
-            if (desc) {
-                const apt = (db.apartments || []).find(a => a.id === currentResidentId)?.name || "شقة";
-                if (!db.tickets) db.tickets = [];
-                db.tickets.push({ id: Date.now(), apt: apt, desc: desc, status: "بلاغ جديد 🔴", date: new Date().toISOString().split('T')[0] });
                 saveDB();
             }
         }
