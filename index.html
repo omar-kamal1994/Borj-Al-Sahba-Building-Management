@@ -100,11 +100,10 @@
 
         <!-- FINANCE -->
         <div id="content-finance" class="space-y-3 hidden">
-            <!-- قسم إدارة الشهور وترحيل الرصيد -->
             <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-3.5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div>
-                    <h3 class="font-bold text-xs"><i class="fa-solid fa-calendar-days text-amber-400"></i> الشهر المالي الحالي: <span id="currentMonthTitle" class="text-amber-300">أكتوبر 2026</span></h3>
-                    <p class="text-[10px] text-emerald-200 mt-0.5">يتم ترحيل الفائض أو العجز تلقائياً عند فتح شهر جديد.</p>
+                    <h3 class="font-bold text-xs"><i class="fa-solid fa-calendar-days text-amber-400"></i> الشهر المالي الحالي: <span id="currentMonthTitle" class="text-amber-300">وفمبر 2026</span></h3>
+                    <p class="text-[10px] text-emerald-200 mt-0.5">ابدأ شهراً جديداً ليتم ترحيل الفائض أو العجز تلقائياً.</p>
                 </div>
                 <button onclick="openNewMonthModal()" class="manager-only bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-bold hidden shadow"><i class="fa-solid fa-forward"></i> بدء شهر جديد وتدوير الحسابات</button>
             </div>
@@ -188,7 +187,7 @@
             </div>
         </div>
 
-        <!-- EMERGENCY (Fully Manageable) -->
+        <!-- EMERGENCY -->
         <div id="content-emergency" class="space-y-3 hidden">
             <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center">
@@ -216,13 +215,12 @@
         </div>
     </div>
 
-    <!-- Ticket Modal -->
     <div id="ticketModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
             <h3 class="font-bold text-sm text-slate-800">تسجيل بلاغ عطل أو صيانة</h3>
             <input type="text" id="ticketAptNo" placeholder="رقم الشقة (مثل: 101)" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <input type="text" id="ticketOwnerName" placeholder="اسم صاحب الشقة / الساكن" class="w-full bg-slate-100 border rounded-xl p-2.5">
-            <textarea id="ticketDesc" placeholder="مكان ووصف المشكلة بالتفصيل (مثل: عطل في أسانسير الدور الثالث)..." rows="3" class="w-full bg-slate-100 border rounded-xl p-2.5"></textarea>
+            <textarea id="ticketDesc" placeholder="مكان ووصف المشكلة بالتفصيل..." rows="3" class="w-full bg-slate-100 border rounded-xl p-2.5"></textarea>
             <div class="flex gap-2 pt-1">
                 <button onclick="submitTicket()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">إرسال البلاغ</button>
                 <button onclick="closeModal('ticketModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
@@ -230,13 +228,12 @@
         </div>
     </div>
 
-    <!-- Emergency Modal -->
     <div id="emergencyModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
             <h3 class="font-bold text-sm" id="emergencyModalTitle">إضافة جهة طوارئ جديدة</h3>
             <input type="hidden" id="emergencyIndex">
             <input type="text" id="emergencyName" placeholder="اسم الجهة أو الشخص (مثل: عماد البواب)" class="w-full bg-slate-100 border rounded-xl p-2.5">
-            <input type="text" id="emergencyPhone" placeholder="رقم الهاتف (مثل: 01000000000)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="emergencyPhone" placeholder="رقم الهاتف" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="saveEmergencyContact()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">حفظ</button>
                 <button onclick="closeModal('emergencyModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
@@ -244,11 +241,10 @@
         </div>
     </div>
 
-    <!-- New Month Modal -->
     <div id="newMonthModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
-            <h3 class="font-bold text-sm text-amber-900">بدء شهر مالى جديد</h3>
-            <p class="text-slate-600">سيتم حفظ الشهر الحالي وترحيل الرصيد (فائض أو عجز) للشهر الجديد.</p>
+            <h3 class="font-bold text-sm text-amber-900">بدء شهر مالي جديد</h3>
+            <p class="text-slate-600">سيتم تدوير الحسابات وترحيل الرصيد للشهر الجديد.</p>
             <input type="text" id="newMonthNameInput" placeholder="اسم الشهر الجديد (مثل: نوفمبر 2026)" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="confirmStartNewMonth()" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold">تأكيد وبدء الشهر</button>
@@ -274,9 +270,9 @@
     <div id="addAptModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
             <h3 class="font-bold text-sm">إضافة شقة جديدة للبرج</h3>
-            <input type="text" id="newAptNumber" placeholder="رقم الشقة (مثال: 104)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="newAptNumber" placeholder="رقم الشقة" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <input type="text" id="newAptTenant" placeholder="اسم المالك أو الساكن" class="w-full bg-slate-100 border rounded-xl p-2.5">
-            <input type="number" id="newAptAmount" placeholder="مبلغ الاشتراك (افتراضي: 200)" value="200" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="number" id="newAptAmount" placeholder="مبلغ الاشتراك" value="200" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="saveNewApartment()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">حفظ</button>
                 <button onclick="closeModal('addAptModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
@@ -298,8 +294,8 @@
 
     <div id="addExtraRevenueModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
-            <h3 class="font-bold text-sm">إضافة بند إيراد إضافي من الشقق</h3>
-            <input type="text" id="extraRevTitle" placeholder="اسم البند (مثل: صيانة طارئة)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <h3 class="font-bold text-sm">إضافة إيراد إضافي من الشقق</h3>
+            <input type="text" id="extraRevTitle" placeholder="اسم البند" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <input type="number" id="extraRevAmount" placeholder="المبلغ المطلوب من كل شقة" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="saveExtraRevenue()" class="flex-1 bg-teal-600 text-white py-2 rounded-xl font-bold">إضافة</button>
@@ -334,31 +330,21 @@
         firebase.initializeApp(firebaseConfig);
         const rtdb = firebase.database();
 
+        // البيانات الافتراضية لشهر نوفمبر 2026 (بداية جديدة نظيفة)
         const initialData = {
-            currentMonth: "أكتوبر 2026",
+            currentMonth: "نوفمبر 2026",
             carriedBalance: 0,
             apartments: [
                 { id: "101", name: "شقة 101", tenant: "أحمد محمد", amount: 200 },
-                { id: "102", name: "شقة 102", tenant: "محمود حسن", amount: 200 },
-                { id: "201", name: "شقة 201", tenant: "كريم عبد الله", amount: 200 }
+                { id: "102", name: "شقة 102", tenant: "محمود حسن", amount: 200 }
             ],
             payments: {
-                "أكتوبر 2026": {
-                    "101": { status: "paid", paidAmount: 200, note: "نقداً" },
-                    "102": { status: "pending", paidAmount: 0 },
-                    "201": { status: "pending", paidAmount: 0 }
-                }
+                "نوفمبر 2026": {}
             },
             extraRevenues: [],
-            expenses: [
-                { id: 1, title: "فاتورة كهرباء السلم", amount: 145, date: "2026-10-03" }
-            ],
-            polls: [
-                { id: 1, question: "هل ترغب في تركيب كاميرات مراقبة جديدة عالبوابة؟", options: { "موافق": ["شقة 101 - أحمد محمد"], "غير موافق": [] } }
-            ],
-            tickets: [
-                { id: 1, apt: "شقة 201", owner: "كريم عبد الله", desc: "لمبة الدور الثاني محروقة", status: "جاري الإصلاح 🔧", date: "2026-10-06" }
-            ],
+            expenses: [],
+            polls: [],
+            tickets: [],
             emergency: [
                 { name: "عماد (حارس العقار)", phone: "01000000000" }
             ]
@@ -372,7 +358,7 @@
             const serverData = snapshot.val();
             if (serverData) {
                 db = serverData;
-                if (!db.currentMonth) db.currentMonth = "أكتوبر 2026";
+                if (!db.currentMonth) db.currentMonth = "نوفمبر 2026";
                 if (!db.carriedBalance) db.carriedBalance = 0;
                 if (!db.extraRevenues) db.extraRevenues = [];
                 if (!db.emergency) db.emergency = [{ name: "عماد (حارس العقار)", phone: "01000000000" }];
@@ -402,7 +388,7 @@
                 select.value = currentResidentId;
             }
 
-            document.getElementById('currentMonthTitle').innerText = db.currentMonth || "أكتوبر 2026";
+            document.getElementById('currentMonthTitle').innerText = db.currentMonth || "نوفمبر 2026";
 
             renderHome();
             renderApartments();
@@ -471,7 +457,7 @@
                 document.getElementById('myApartmentTenant').innerText = "يرجى إضافة شقة من تبويب الشقق";
                 return;
             }
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             if (!db.payments) db.payments = {};
             if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
             const payment = db.payments[activeMonth][apt.id] || { status: 'pending', paidAmount: 0 };
@@ -532,7 +518,7 @@
         }
 
         function renderApartments() {
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             if (!db.payments) db.payments = {};
             if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
             const monthPayments = db.payments[activeMonth];
@@ -663,7 +649,7 @@
         }
 
         function promptPartialPayment(aptId, totalDue) {
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             const input = prompt(`أدخل المبلغ المدفوع (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
@@ -688,7 +674,7 @@
         function notifyPaymentSent() {
             const apt = db.apartments.find(a => a.id === currentResidentId);
             const totalDue = apt ? getTotalAptDue(apt) : 200;
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             const input = prompt(`أدخل المبلغ الذي قمت بسداده (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
@@ -713,7 +699,7 @@
                 return;
             }
 
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             const monthPayments = db.payments[activeMonth] || {};
             let totalIncome = 0;
             db.apartments.forEach(a => {
@@ -722,23 +708,21 @@
             });
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
             
-            // حساب الرصيد المتبقي للترحيل
             const netOld = Number(db.carriedBalance || 0) + totalIncome - totalExpenses;
 
-            // تحديث البيانات للشهر الجديد
             db.carriedBalance = netOld;
             db.currentMonth = newMonthName;
-            db.extraRevenues = []; // تصفير الإيرادات الإضافية للشهر الجديد
-            db.expenses = []; // تصفير مصروفات الشهر الجديد
+            db.extraRevenues = [];
+            db.expenses = [];
             if (!db.payments[newMonthName]) db.payments[newMonthName] = {};
 
             saveDB();
             closeModal('newMonthModal');
-            alert(`تم بدء الشهر الجديد (${newMonthName}) بنجاح وتم تترحيل الرصيد السابق (${netOld} جـ)!`);
+            alert(`تم بدء الشهر الجديد (${newMonthName}) بنجاح وتم ترحيل الرصيد (${netOld} جـ)!`);
         }
 
         function renderFinance() {
-            const activeMonth = db.currentMonth || "أكتوبر 2026";
+            const activeMonth = db.currentMonth || "نوفمبر 2026";
             const monthPayments = (db.payments && db.payments[activeMonth]) ? db.payments[activeMonth] : {};
             let totalIncome = 0;
             if (db.apartments) {
