@@ -60,7 +60,7 @@
                     <div id="myPaymentStatusBadge" class="bg-amber-400 text-emerald-950 px-2.5 py-1 rounded-full text-[11px] font-bold shadow">جاري التحميل...</div>
                 </div>
                 <div class="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-                    <span id="myMonthlyDuesText">الإجمالي المطلوب: 200 جـ</span>
+                    <span id="myMonthlyDuesText">الإجمالي المطلوب: 0 جـ</span>
                     <button onclick="notifyPaymentSent()" class="bg-white text-emerald-800 px-3 py-1.5 rounded-xl font-bold shadow hover:bg-emerald-50 transition w-full sm:w-auto text-center">إشعار سداد المستحقات</button>
                 </div>
             </div>
@@ -102,7 +102,7 @@
         <div id="content-finance" class="space-y-3 hidden">
             <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-3.5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div>
-                    <h3 class="font-bold text-xs"><i class="fa-solid fa-calendar-days text-amber-400"></i> الشهر المالي الحالي: <span id="currentMonthTitle" class="text-amber-300">وفمبر 2026</span></h3>
+                    <h3 class="font-bold text-xs"><i class="fa-solid fa-calendar-days text-amber-400"></i> الشهر المالي الحالي: <span id="currentMonthTitle" class="text-amber-300">نوفمبر 2026</span></h3>
                     <p class="text-[10px] text-emerald-200 mt-0.5">ابدأ شهراً جديداً ليتم ترحيل الفائض أو العجز تلقائياً.</p>
                 </div>
                 <button onclick="openNewMonthModal()" class="manager-only bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-bold hidden shadow"><i class="fa-solid fa-forward"></i> بدء شهر جديد وتدوير الحسابات</button>
@@ -232,7 +232,7 @@
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
             <h3 class="font-bold text-sm" id="emergencyModalTitle">إضافة جهة طوارئ جديدة</h3>
             <input type="hidden" id="emergencyIndex">
-            <input type="text" id="emergencyName" placeholder="اسم الجهة أو الشخص (مثل: عماد البواب)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="emergencyName" placeholder="اسم الجهة أو الشخص" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <input type="text" id="emergencyPhone" placeholder="رقم الهاتف" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="saveEmergencyContact()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">حفظ</button>
@@ -245,7 +245,7 @@
         <div class="bg-white w-full max-w-sm rounded-3xl p-4 space-y-2.5 text-xs">
             <h3 class="font-bold text-sm text-amber-900">بدء شهر مالي جديد</h3>
             <p class="text-slate-600">سيتم تدوير الحسابات وترحيل الرصيد للشهر الجديد.</p>
-            <input type="text" id="newMonthNameInput" placeholder="اسم الشهر الجديد (مثل: نوفمبر 2026)" class="w-full bg-slate-100 border rounded-xl p-2.5">
+            <input type="text" id="newMonthNameInput" placeholder="اسم الشهر الجديد (مثل: ديسمبر 2026)" class="w-full bg-slate-100 border rounded-xl p-2.5">
             <div class="flex gap-2 pt-1">
                 <button onclick="confirmStartNewMonth()" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold">تأكيد وبدء الشهر</button>
                 <button onclick="closeModal('newMonthModal')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-bold">إلغاء</button>
@@ -330,14 +330,11 @@
         firebase.initializeApp(firebaseConfig);
         const rtdb = firebase.database();
 
-        // البيانات الافتراضية لشهر نوفمبر 2026 (بداية جديدة نظيفة)
+        // بيانات نظيفة بالكامل ببدء شهر نوفمبر 2026 ورصيد صفري
         const initialData = {
             currentMonth: "نوفمبر 2026",
             carriedBalance: 0,
-            apartments: [
-                { id: "101", name: "شقة 101", tenant: "أحمد محمد", amount: 200 },
-                { id: "102", name: "شقة 102", tenant: "محمود حسن", amount: 200 }
-            ],
+            apartments: [],
             payments: {
                 "نوفمبر 2026": {}
             },
@@ -351,15 +348,15 @@
         };
 
         let db = initialData;
-        let currentResidentId = "101";
-        let isManagerMode = false;
+        let currentResidentId = "";
+        let isManagerMode = localStorage.getItem('borj_manager_mode') === 'true';
 
         rtdb.ref('borj_elsohba_db').on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
                 db = serverData;
                 if (!db.currentMonth) db.currentMonth = "نوفمبر 2026";
-                if (!db.carriedBalance) db.carriedBalance = 0;
+                if (db.carriedBalance === undefined) db.carriedBalance = 0;
                 if (!db.extraRevenues) db.extraRevenues = [];
                 if (!db.emergency) db.emergency = [{ name: "عماد (حارس العقار)", phone: "01000000000" }];
             } else {
@@ -379,13 +376,22 @@
         }
 
         function initApp() {
-            if (db.apartments && db.apartments.length > 0 && !db.apartments.some(a => a.id === currentResidentId)) {
-                currentResidentId = db.apartments[0].id;
+            if (db.apartments && db.apartments.length > 0) {
+                if (!db.apartments.some(a => a.id === currentResidentId)) {
+                    currentResidentId = db.apartments[0].id;
+                }
+            } else {
+                currentResidentId = "";
             }
+
             const select = document.getElementById('currentResidentSelect');
-            if (select && db.apartments) {
-                select.innerHTML = db.apartments.map(apt => `<option value="${apt.id}">${apt.name} - ${apt.tenant}</option>`).join('');
-                select.value = currentResidentId;
+            if (select) {
+                if (db.apartments && db.apartments.length > 0) {
+                    select.innerHTML = db.apartments.map(apt => `<option value="${apt.id}">${apt.name} - ${apt.tenant}</option>`).join('');
+                    select.value = currentResidentId;
+                } else {
+                    select.innerHTML = `<option value="">لا توجد شقق مسجلة</option>`;
+                }
             }
 
             document.getElementById('currentMonthTitle').innerText = db.currentMonth || "نوفمبر 2026";
@@ -410,6 +416,7 @@
                 document.getElementById('managerPinInput').focus();
             } else {
                 isManagerMode = false;
+                localStorage.setItem('borj_manager_mode', 'false');
                 updateManagerUI();
             }
         }
@@ -417,6 +424,7 @@
         function verifyManagerPin() {
             if (document.getElementById('managerPinInput').value === "1234") {
                 isManagerMode = true;
+                localStorage.setItem('borj_manager_mode', 'true');
                 closeModal('managerPinModal');
                 updateManagerUI();
                 alert("تم تفعيل وضع مدير البرج بنجاح!");
@@ -450,13 +458,12 @@
         }
 
         function renderHome() {
-            if (!db.apartments) return;
-            const apt = db.apartments.find(a => a.id === currentResidentId) || db.apartments[0];
-            if (!apt) {
+            if (!db.apartments || db.apartments.length === 0) {
                 document.getElementById('myApartmentTitle').innerText = "لا توجد شقق مسجلة";
-                document.getElementById('myApartmentTenant').innerText = "يرجى إضافة شقة من تبويب الشقق";
+                document.getElementById('myApartmentTenant').innerText = "يرجى إضافة شقق من تبويب الشقق أولاً";
                 return;
             }
+            const apt = db.apartments.find(a => a.id === currentResidentId) || db.apartments[0];
             const activeMonth = db.currentMonth || "نوفمبر 2026";
             if (!db.payments) db.payments = {};
             if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
@@ -525,7 +532,7 @@
             const container = document.getElementById('apartmentsCardsContainer');
 
             if (!db.apartments || db.apartments.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-400 py-4 text-xs">لا توجد شقق مسجلة حالياً.</p>`;
+                container.innerHTML = `<p class="text-center text-slate-400 py-4 text-xs">لا توجد شقق مسجلة حالياً. اضغط "إضافة شقة" للبدء.</p>`;
                 return;
             }
 
@@ -672,14 +679,18 @@
         }
 
         function notifyPaymentSent() {
-            const apt = db.apartments.find(a => a.id === currentResidentId);
-            const totalDue = apt ? getTotalAptDue(apt) : 200;
+            if (!db.apartments || db.apartments.length === 0) {
+                alert("لا توجد شقق مسجلة لتسجيل السداد.");
+                return;
+            }
+            const apt = db.apartments.find(a => a.id === currentResidentId) || db.apartments[0];
+            const totalDue = getTotalAptDue(apt);
             const activeMonth = db.currentMonth || "نوفمبر 2026";
             const input = prompt(`أدخل المبلغ الذي قمت بسداده (الإجمالي المطلوب: ${totalDue} جنيه):`, totalDue);
             if (input !== null) {
                 const paid = Number(input);
                 if (!db.payments[activeMonth]) db.payments[activeMonth] = {};
-                db.payments[activeMonth][currentResidentId] = {
+                db.payments[activeMonth][apt.id] = {
                     status: paid >= totalDue ? 'paid' : 'pending',
                     paidAmount: paid
                 };
@@ -911,14 +922,13 @@
         }
 
         function openNewTicketModal() {
-            const apt = (db.apartments || []).find(a => a.id === currentResidentId);
-            if (apt) {
-                document.getElementById('ticketAptNo').value = apt.name.replace('شقة ', '');
-                document.getElementById('ticketOwnerName').value = apt.tenant;
-            } else {
-                document.getElementById('ticketAptNo').value = '';
-                document.getElementById('ticketOwnerName').value = '';
+            if (!db.apartments || db.apartments.length === 0) {
+                alert("يرجى إضافة شقق أولاً لتسجيل البلاغات.");
+                return;
             }
+            const apt = db.apartments.find(a => a.id === currentResidentId) || db.apartments[0];
+            document.getElementById('ticketAptNo').value = apt.name.replace('شقة ', '');
+            document.getElementById('ticketOwnerName').value = apt.tenant;
             document.getElementById('ticketDesc').value = '';
             document.getElementById('ticketModal').classList.remove('hidden');
         }
@@ -942,7 +952,7 @@
                 closeModal('ticketModal');
                 alert("تم إرسال بلاغ العطل بنجاح!");
             } else {
-                alert("يرجى تعبئة كافة الحقول (رقم الشقة، اسم الساكن، ووصف المشكلة).");
+                alert("يرجى تعبئة كافة الحقول.");
             }
         }
 
