@@ -356,7 +356,6 @@
             if (serverData) {
                 db = serverData;
                 if (!db.currentMonth) db.currentMonth = "نوفمبر 2026";
-                // جعلنا القيمة الافتراضية صفراً تماماً لو لم تكن موجودة
                 if (db.carriedBalance === undefined) db.carriedBalance = 0;
                 if (!db.extraRevenues) db.extraRevenues = [];
                 if (!db.emergency) db.emergency = [{ name: "عماد (حارس العقار)", phone: "01000000000" }];
@@ -370,7 +369,6 @@
             rtdb.ref('borj_elsohba_db').set(db);
         }
 
-        // دالة تصفير الرصيد المترحّل يدوياً
         function resetCarriedBalance() {
             if (confirm("هل أنت متأكد من تصفير الرصيد المترحّل وجعله 0؟")) {
                 db.carriedBalance = 0;
@@ -500,13 +498,15 @@
             let totalIncome = 0;
             let lateCount = 0;
             const monthPayments = db.payments[activeMonth] || {};
-            db.apartments.forEach(a => {
-                const p = monthPayments[a.id];
-                const pAmt = Number(p ? p.paidAmount || 0 : 0);
-                totalIncome += pAmt;
-                const req = getTotalAptDue(a);
-                if (!p || (p.status !== 'paid' && pAmt < req)) lateCount++;
-            });
+            if (db.apartments && Array.isArray(db.apartments)) {
+                db.apartments.forEach(a => {
+                    const p = monthPayments[a.id];
+                    const pAmt = Number(p ? p.paidAmount || 0 : 0);
+                    totalIncome += pAmt;
+                    const req = getTotalAptDue(a);
+                    if (!p || (p.status !== 'paid' && pAmt < req)) lateCount++;
+                });
+            }
 
             const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
             const netBalance = Number(db.carriedBalance || 0) + totalIncome - totalExpenses;
@@ -723,12 +723,15 @@
             const activeMonth = db.currentMonth || "نوفمبر 2026";
             const monthPayments = db.payments[activeMonth] || {};
             let totalIncome = 0;
-            db.apartments.forEach(a => {
-                const p = monthPayments[a.id];
-                totalIncome += Number(p ? p.paidAmount || 0 : 0);
-            });
-            const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
             
+            if (db.apartments && Array.isArray(db.apartments)) {
+                db.apartments.forEach(a => {
+                    const p = monthPayments[a.id];
+                    totalIncome += Number(p ? p.paidAmount || 0 : 0);
+                });
+            }
+            
+            const totalExpenses = (db.expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
             const netOld = Number(db.carriedBalance || 0) + totalIncome - totalExpenses;
 
             db.carriedBalance = netOld;
@@ -746,7 +749,8 @@
             const activeMonth = db.currentMonth || "نوفمبر 2026";
             const monthPayments = (db.payments && db.payments[activeMonth]) ? db.payments[activeMonth] : {};
             let totalIncome = 0;
-            if (db.apartments) {
+            
+            if (db.apartments && Array.isArray(db.apartments)) {
                 db.apartments.forEach(a => {
                     const p = monthPayments[a.id];
                     totalIncome += Number(p ? p.paidAmount || 0 : 0);
@@ -784,7 +788,7 @@
             `).join('');
 
             const arrearsBody = document.getElementById('arrearsReportTableBody');
-            if (db.apartments) {
+            if (db.apartments && Array.isArray(db.apartments)) {
                 arrearsBody.innerHTML = db.apartments.map(apt => {
                     const p = monthPayments[apt.id] || { status: 'pending', paidAmount: 0 };
                     const totalDue = getTotalAptDue(apt);
@@ -805,6 +809,8 @@
                         </tr>
                     `;
                 }).join('');
+            } else {
+                arrearsBody.innerHTML = `<tr><td colspan="5" class="p-2 text-center text-slate-400">لا توجد شقق مسجلة.</td></tr>`;
             }
             updateManagerUI();
         }
